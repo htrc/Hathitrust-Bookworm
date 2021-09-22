@@ -49,7 +49,7 @@ def generateWordList(features,data,core_count):
 
 	if validateInputs(features,data,core_count):
 		generateStores.generateStores(features,data,int(core_count))
-		reduceCounts.reduceCounts(features,data,int(core_count))
+		reduceCounts.reduceCounts(data,int(core_count))
 		createWordlist.createWordlist(features,data,int(core_count))
 
 	end_time = datetime.datetime.now().time()

@@ -7,7 +7,8 @@ processedFeaturePath=bw-input
 tmpPath=/tmp
 
 # Listing of Extracted Features files to process
-featureFileList=/data/datasets/htrc-feat-extract/pd/pd-file-listing.txt.$(part)
+#featureFileList=/data/datasets/htrc-feat-extract/pd/pd-file-listing.txt.$(part)
+featureFileList=../50K/listing/ids.txt
 
 # Log location
 

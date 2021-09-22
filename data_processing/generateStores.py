@@ -4,21 +4,14 @@ from tqdm import tqdm # Progress bars!
 import multiprocessing as mp
 import numpy as np
 import logging
-import os
+import os, gc
 
 def get_last(storefile):
-	import pandas as pd
 	with pd.HDFStore(storefile, mode="a") as store:
 		n = int(store.get_storer("/tf/docs").nrows)
 		return store.select_column('/tf/docs', 'id', start=n-1)
 
 def check_for_processed(storefile,features,q):
-	import gc
-	import pandas as pd
-	import numpy as np
-	import logging
-	from htrc_features import utils
-
 	all_unique = []
 	batchsize = 100000000
 
@@ -87,10 +80,6 @@ def get_doc_counts(paths, data, q, mincount=False, max_str_bytes = 50):
 	This means the engine can collect enough texts to do a simple filter (i.e. >X counts in Y texts)
 	and can save to it's own store.
 	'''
-	import logging
-	import os
-	import gc
-	import pandas as pd
 	fname = data + 'stores/bw_counts_%s.h5' % os.getpid()
 	success_log = []
 	logging.info("Starting %d volume batch on PID=%s" % (len(paths), os.getpid()))
@@ -158,8 +147,7 @@ def get_doc_counts(paths, data, q, mincount=False, max_str_bytes = 50):
 	return paths
 
 def get_count(path, store=False):
-	''' Get tokencount information from a single doc, by path'''
-	from htrc_features import FeatureReader    
+	''' Get tokencount information from a single doc, by path''' 
 	max_char = 50
 	logging.debug(path)
 	vol = FeatureReader(path).first()
@@ -191,7 +179,6 @@ def trim_token(t, max=50):
 	return t
 
 def get_processed(features):
-	import numpy as np
 	''' Get already processed files. Wrapped in func for easy refresh'''
 	try:
 		with open(successfile, "r") as f:
@@ -202,7 +189,6 @@ def get_processed(features):
 		return np.array([])
 
 def init_log(data,name=False):
-	import logging, os
 	if not name:
 		name = os.getpid()
 	handler = logging.FileHandler(data + "logs/bw-%s.log" % name, 'a')
@@ -239,7 +225,7 @@ def listener(q,successfile):
 			print("No Results")
 			logging.error("Problem with result in batch %d" % i)
 
-def store_check_listener(q,successfileu):
+def store_check_listener(q,successfile):
 	all_ids = []
 	i = 0
 
@@ -275,7 +261,7 @@ def generateStores(features,data,core_count):
 	init_log(data,"root")
 
 	with open(features+"listing/ids.txt", "r") as f:
-		paths = [features+path.strip() for path in f.readlines()][1:]
+		paths = [features+path.strip() for path in f.readlines()]
 		print("Number of texts", len(paths))
 
 	successfile = data + "successful-counts.txt"

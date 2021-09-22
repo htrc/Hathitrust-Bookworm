@@ -5,6 +5,7 @@ import numpy as np
 import multiprocessing as mp
 import logging
 import os
+import gc
 from tqdm import tqdm # Progress bars!
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar, Profiler, ResourceProfiler, CacheProfiler, visualize
@@ -23,7 +24,7 @@ def finalSort(data):
 		logging.info("Done sorting")
 
 def finalCombine(stores,data):
-	stores = glob.glob(data + 'final/fromnodes*h5') + glob.glob(data + 'final/fromnodes*.h5')
+#	stores = glob.glob(data + 'final/fromnodes*h5') + glob.glob(data + 'final/fromnodes*.h5')
 
 	# Collect a list of which stores have information for each possible language
 	storelist = dict()
@@ -124,16 +125,10 @@ def sumTokenCounts(stores,data):
 				if batch == False:
 					break
 
-def triage(inputstore,data):
-	try:
-		import numpy as np
-		import pandas as pd
-		import logging
-		import os
-		import gc
-	except:
-		return "import error for " + inputstore
+		logging.info("Finished processing %s. Removing to reduce space.")
+		os.remove(storefile)
 
+def triage(inputstore,data):
 	chunksize = 100000
 	storefolder = 'merged1' # this is in the h5 hierarchy
 	outputstorename = data + "merged/merge-%s.h5" % os.getpid()
@@ -169,7 +164,6 @@ def triage(inputstore,data):
 		return "%d errors on process %s, check logs" % (errors, os.getpid())
 
 def init_log(data,name=False):
-	import logging, os
 	if not name:
 		name = os.getpid()
 	handler = logging.FileHandler(data + "logs/bw-%s.log" % name, 'a')
@@ -200,7 +194,7 @@ def listener(q):
 				else:
 					logging.error(result)
 
-def reduceCounts(features,data,core_count):
+def reduceCounts(data,core_count):
 	init_log(data,"final")
 	rawstores = glob.glob(data + "stores/*h5")
 
@@ -223,7 +217,7 @@ def reduceCounts(features,data,core_count):
 	q.put('kill')
 
 	sumTokenCounts(glob.glob(data + "merged/*.h5"),data)
-	finalCombine(glob.glob(data + 'final/fromnodes*h5') + glob.glob(data + 'final/fromnodes*.h5'),data)
+	finalCombine(glob.glob(data + 'final/fromnodes*h5'),data)
 	finalSort(data)
 
 	with pd.HDFStore(data + 'final/final-sorted.h5') as store:

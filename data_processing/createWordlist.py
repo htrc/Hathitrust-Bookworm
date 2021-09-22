@@ -1,7 +1,7 @@
 import pandas as pd
 import dask.dataframe as dd
 import os
-import regex
+import re as regex
 import numpy as np
 from htrc_features import FeatureReader, utils
 
@@ -24,8 +24,8 @@ def testAgainstDictionaries(features,data,final):
 	extradictwords = np.setdiff1d(shortlist, unique_final_lower)
 	print(pd.Series(extradictwords).sample(50))
 	print(shortlist.shape[0], extradictwords.shape[0], 1-extradictwords.shape[0]/shortlist.shape[0])
-	df = pd.read_hdf(data + 'final/wordlist.h5')
-	df.to_csv(data + 'final/wordlist.csv',sep='\t',index=False)
+#	df = pd.read_hdf(data + 'final/wordlist.h5')
+#	df.to_csv(data + 'final/wordlist.csv',sep='\t',index=False)
 
 def addProblemCharactersToWordlist(final_candidate,prob_chars):
 	# Problem characters that are not in the wordlist: add them (as fixed version)
@@ -174,6 +174,8 @@ def createWordlist(features,data,core_count):
 			print("b")
 			print(e)
 
+	df = pd.read_hdf(data + 'final/wordlist.h5')
+	df.to_csv(data + 'final/wordlist.csv',sep='\t',index=False)
 	testAgainstDictionaries(features,data,final)
 
 if __name__ == "__main__":
