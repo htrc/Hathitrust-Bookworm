@@ -1,5 +1,5 @@
 import sys, csv
-from tqdm import tqdm
+from builtins import any as b_any
 csv.field_size_limit(sys.maxsize)
 
 def __id_encode(s: str) -> str:
@@ -47,8 +47,10 @@ def generateHathiFiles(full_hathifile,volumes,output):
 
 				lib_id, unclean_volid = row[0].split('.', 1)
 				stubbied_volid = unclean_volid[::3]
-				if lib_id in volume_dict and stubbied_volid in volume_dict[lib_id] and row[0] in volume_dict[lib_id][stubbied_volid]:
+				if lib_id in volume_dict and stubbied_volid in volume_dict[lib_id] and row[0] in volume_dict[lib_id][stubbied_volid] and not b_any('\t' in x for x in row):
 #				if row[0] in volume_list:
+					print(row)
+					print(volume_dict[lib_id][stubbied_volid])
 					hathi_writer.writerow(row)
 					found.append(row[0])
 
