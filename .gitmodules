@@ -4,6 +4,6 @@
 [submodule "HTMetadata-Bookworm"]
 	path = HTMetadata-Bookworm
 	url = https://github.com/dkudeki/HTMetadata-Bookworm.git
-[submodule "BookwormGUI"]
-	path = BookwormGUI
-	url = https://github.com/dkudeki/BookwormGUI
+[submodule "HTRC-BookwormGUI"]
+	path = HTRC-BookwormGUI
+	url = https://github.com/htrc/HTRC-BookwormGUI
