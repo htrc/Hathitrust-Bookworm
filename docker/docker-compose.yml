@@ -1,0 +1,22 @@
+version: "3"
+services:
+  mysql:
+    image: "mysql:5.7"
+    container_name: "mysql"
+    volumes:
+      - "mysql-db:/var/lib/mysql"
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_ROOT_HOST=172.*.*.*
+    restart: always
+    ports:
+      - "3307:3306"
+    networks:
+      bw_network:
+
+volumes:
+  mysql-db:
+    external: true
+
+networks:
+  bw_network:
