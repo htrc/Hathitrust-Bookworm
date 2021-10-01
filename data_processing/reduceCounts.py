@@ -24,8 +24,6 @@ def finalSort(data):
 		logging.info("Done sorting")
 
 def finalCombine(stores,data):
-#	stores = glob.glob(data + 'final/fromnodes*h5') + glob.glob(data + 'final/fromnodes*.h5')
-
 	# Collect a list of which stores have information for each possible language
 	storelist = dict()
 	for storepath in stores:
@@ -126,7 +124,7 @@ def sumTokenCounts(stores,data):
 					break
 
 		logging.info("Finished processing %s. Removing to reduce space.")
-		os.remove(storefile)
+#		os.remove(storefile)
 
 def triage(inputstore,data):
 	chunksize = 100000
