@@ -229,4 +229,4 @@ def reduceCounts(data,core_count):
 	p.join()
 
 if __name__ == "__main__":
-	reduceCounts(sys.argv[1],sys.argv[2],sys.argv[3])
+	reduceCounts(sys.argv[1],sys.argv[2])
