@@ -1,4 +1,4 @@
-from htrc_features import FeatureReader, utils
+from htrc_features import Volume, utils
 import pandas as pd
 from tqdm import tqdm # Progress bars!
 import multiprocessing as mp
@@ -150,7 +150,7 @@ def get_count(path, store=False):
 	''' Get tokencount information from a single doc, by path''' 
 	max_char = 50
 	logging.debug(path)
-	vol = FeatureReader(path).first()
+	vol = Volume(path)
 	logging.debug(vol)
 	logging.debug(vol.id)
 	logging.debug(vol.language)
