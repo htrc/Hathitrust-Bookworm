@@ -74,9 +74,13 @@ def token_sum_listener(q,savestore,max_str_bytes):
 				#lang,full_merge,max_str_bytes
 				if 'lang' in results and 'full_merge' in results:
 					print("Started writing %s counts to %s" % (results['lang'], savestore))
+					queue_size = q.qsize()
+					index_command = False
+					if queue_size == 0:
+						index_command = True
 					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
-						store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes})
-					print("Finished writing %s counts to %s. Remaining queue: %s" % (results['lang'], savestore,q.qsize()))
+						store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes},index=index_command)
+					print("Finished writing %s counts to %s. Remaining queue: %s" % (results['lang'], savestore,queue_size))
 				else:
 					logging.error(result)
 
