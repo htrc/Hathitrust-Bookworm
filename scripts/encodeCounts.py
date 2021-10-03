@@ -53,16 +53,19 @@ def parallelEncodeH5File(core_count,counts,word_dict,vol_dict,output_folder):
 	store_name = counts[counts.rfind('/')+1:-3]
 	os.mkdir(output_folder + store_name)
 
-	with mp.Pool(processes=int(core_count)) as pool:
-		jobs = []
-		
-		file_chunk_counter = 0
-		for chunk in store_iterator:
-			job = pool.apply_async(processChunk,(chunk,word_dict,vol_dict,output_folder,store_name))
-			jobs.append(job)
+	pool = mp.Pool(processes=int(core_count))
+	jobs = []
+	
+	file_chunk_counter = 0
+	for chunk in store_iterator:
+		job = pool.apply_async(processChunk,(chunk,word_dict,vol_dict,output_folder,store_name))
+		jobs.append(job)
 
-		for job in jobs:
-			job.get()
+	for job in jobs:
+		job.get()
+
+	pool.close()
+	pool.join()
 
 
 def encodeH5File(counts,word_dict,vol_dict,output_folder):
