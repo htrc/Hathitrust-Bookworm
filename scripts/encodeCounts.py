@@ -19,7 +19,7 @@ def applyEncoding(raw_items,mapping):
 	return output
 
 def processChunk(chunk,word_dict,vol_dict,output_folder,store_name):
-	print("%s processing a chunk of %i volumes" % (str(os.getpid(),len(chunk['count'].index.levels[0].values))))
+	print("%s processing a chunk of %i volumes" % (str(os.getpid()),len(chunk['count'].index.levels[0].values)))
 	chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
 
 	drop_list = []
