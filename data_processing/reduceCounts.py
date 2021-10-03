@@ -9,6 +9,8 @@ import gc
 from tqdm import tqdm # Progress bars!
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar, Profiler, ResourceProfiler, CacheProfiler, visualize
+import time, datetime
+from datetime import timedelta
 
 def finalSort(data):
 	with pd.HDFStore(data + 'final/final.h5') as store:
@@ -56,28 +58,40 @@ def finalCombine(stores,data):
 			logging.exception("Error with %s" % lang)
 	logging.info("Done")
 
+def token_sum_listener(q,savestore,max_str_bytes):
+	i = 0
 
-def sumTokenCounts(stores,data):
-	max_str_bytes = 50
-	chunksize = 100000
-	batch_limit = 6*10**8
-	savestore = data + "final/fromnodes-323.h5"
+	while(1):
+		results = q.get()
 
-	for storefile in stores:
-		print(storefile)
-		logging.info("Next store: %s" % storefile)
-		try:
-			# Get Unique languages
-			with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
-				langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
-		except:
-			logging.exception("Can't read languages from %s" % storefile)
-			continue
+		if results:
+#			print("Got Results")
+#			print(os.getpid())
+			if results == 'kill':
+				print("Results say kill")
+				break
+			else:
+				#lang,full_merge,max_str_bytes
+				if 'lang' in results and 'full_merge' in results:
+					print("Started writing %s counts to %s" % (results['lang'], savestore))
+					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+						store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes})
+					print("Finished writing %s counts to %s. Remaining queue: %s" % (results['lang'], savestore,q.qsize()))
+				else:
+					logging.error(result)
+
+def sumTokenCounts(storefile,chunksize,batch_limit,q):
+	print(storefile)
+	logging.info("Next store: %s" % storefile)
+	try:
+		# Get Unique languages
+		with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
+			langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
 
 		for lang in langs:
 			batch = False
 			logging.info("Starting lang %s from %s" % (lang, storefile))
-			print(lang)
+#			print(lang)
 
 			if not re.match('[a-z]{3}', lang):
 				logging.error("lang '%s' is not three alphanumeric characters. Skipping for now. (%s)" % (lang, storefile))
@@ -108,23 +122,35 @@ def sumTokenCounts(stores,data):
 						i += 1
 				try:
 					logging.info("Starting full merge for %s with %d partitions" % (lang, ddf.npartitions))
-					with ProgressBar():
-						full_merge = ddf.reset_index().groupby('token').sum().compute()
+
+					print("%s – %s : Starting full merge with %d partitions" % (storefile, lang, ddf.npartitions))
+					local_start_time = datetime.datetime.now().time()
+
+					full_merge = ddf.reset_index().groupby('token').sum().compute()
+
+					local_end_time = datetime.datetime.now().time()
+					duration = datetime.datetime.combine(datetime.date.min,local_end_time)-datetime.datetime.combine(datetime.date.min,local_start_time)
+					if duration < timedelta(0):
+						duration = (timedelta(days=1) + duration)
+					print("%s – %s : Finished full merge with %d partitions – %s" % (storefile, lang, ddf.npartitions, duration))
 					#if lang == 'eng':
 						# For curiosity: see the profiling for English
 					#    prof.visualize()
 					logging.info("Success! Saving merged.")
 					# The /fromnodes table is the sum from all the different stores, but will need to be summed one more time
-					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
-						store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes})
+	#				with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+	#					store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes})
+					q.put({ 'lang': lang, 'full_merge': full_merge })
 				except:
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
 
 				if batch == False:
 					break
+	except:
+		logging.exception("Can't read languages from %s" % storefile)
 
-		logging.info("Finished processing %s. Removing to reduce space.")
-#		os.remove(storefile)
+#	logging.info("Finished processing %s. Removing to reduce space.")
+#	os.remove(storefile)
 
 def triage(inputstore,data):
 	chunksize = 100000
@@ -214,7 +240,39 @@ def reduceCounts(data,core_count):
 
 	q.put('kill')
 
-	sumTokenCounts(glob.glob(data + "merged/*.h5"),data)
+
+	stores = glob.glob(data + "merged/*.h5")
+	max_str_bytes = 50
+	chunksize = 100000
+	batch_limit = 6*10**8
+	savestore = data + "final/fromnodes-323.h5"
+
+	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
+	sum_jobs = []
+	for storefile in stores:
+		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q))
+		sum_jobs.append(sum_job)
+
+	for sum_job in sum_jobs:
+		sum_job.get()
+
+	print("Token summing complete")
+	while(q.qsize() > 0):
+		print("Waiting to write %s language sums to %s" % (q.qsize(),savestore))
+		time.sleep(60)
+
+	last_write_unfinished = True
+	while(last_write_unfinished):
+		try:
+			with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+				last_write_unfinished = False
+		except:
+			print("Waiting for final write to %s to finish" % savestore)
+			time.sleep(60)
+
+	q.put('kill')
+
+#	sumTokenCounts(glob.glob(data + "merged/*.h5"),data)
 	finalCombine(glob.glob(data + 'final/fromnodes*h5'),data)
 	finalSort(data)
 
