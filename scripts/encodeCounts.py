@@ -18,6 +18,23 @@ def applyEncoding(raw_items,mapping):
 
 	return output
 
+def listener(q):
+	i = 0
+
+	while(1):
+		results = q.get()
+		i += 1
+
+		if results:
+			if results == 'kill':
+				break
+			else:
+				if results == "success":
+					print("Done processing batch %d" % i)
+				else:
+					print(results)
+
+
 def processChunk(chunk,word_dict,vol_dict,output_folder,store_name):
 	print("%s processing a chunk of %i volumes" % (str(os.getpid()),len(chunk['count'].index.levels[0].values)))
 	chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
@@ -48,22 +65,34 @@ def processChunk(chunk,word_dict,vol_dict,output_folder,store_name):
 	else:
 		encoded_df.to_csv(output_folder + store_name + SLASH + output_base + '-0.txt',mode='a',header=False,sep='\t')
 
+	return "success"
+
 def parallelEncodeH5File(core_count,counts,word_dict,vol_dict,output_folder):
 	store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=1000000)
 	store_name = counts[counts.rfind('/')+1:-3]
 	os.mkdir(output_folder + store_name)
 
-	pool = mp.Pool(processes=int(core_count))
+	manager = mp.Manager()
+	q = manager.Queue()
+	pool = mp.Pool(int(core_count))
+
+	watcher = pool.apply_async(listener, (q,))
+
 	jobs = []
 	
 	file_chunk_counter = 0
 	for chunk in store_iterator:
+		print("Adding chunk:")
+		print(chunk)
 		job = pool.apply_async(processChunk,(chunk,word_dict,vol_dict,output_folder,store_name))
 		jobs.append(job)
 
 	for job in jobs:
+		print("Running job:")
+		print(job)
 		job.get()
 
+	q.put('kill')
 	pool.close()
 	pool.join()
 
@@ -75,7 +104,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder):
 
 	file_chunk_counter = 0
 	for chunk in store_iterator:
-#		print("Processing a chunk of %i volumes" % len(chunk['count'].index.levels[0].values))
+		print("%s – Processing a chunk of %i volumes from %s" % (str(os.getpid()),len(chunk['count'].index.levels[0].values),store_name))
 		chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
 
 		drop_list = []
@@ -106,7 +135,7 @@ def encodeCounts(args):
 
 	if args.multi_file_processing:
 		print("Each .h5 file will be turned into an indeterminate number of files with a max size")
-		with mp.Pool(processes=int(args.core_count)) as pool:
+		with mp.Pool(int(args.core_count)) as pool:
 			jobs = []
 
 			for file in os.listdir(args.counts_folder):
@@ -114,7 +143,7 @@ def encodeCounts(args):
 					job = pool.apply_async(encodeH5File,(os.path.join(args.counts_folder,file),word_dict,vol_dict,args.output_folder))
 					jobs.append(job)
 
-			for job in tqdm(jobs):
+			for job in jobs:
 				job.get()
 	else:
 		print("Each .h5 file will be processed by %s parallel processes simultaniously in full before moving on to the next file. Outputs won't greatly exceed a set max size." % args.core_count)

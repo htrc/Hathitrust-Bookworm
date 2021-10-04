@@ -187,10 +187,10 @@ def listener(q):
 #				print("Results say kill")
 				break
 			else:
-				if result == "success":
+				if results == "success":
 					logging.info("Done processing batch %d" % i)
 				else:
-					logging.error(result)
+					logging.error(results)
 
 def reduceCounts(data,core_count):
 	init_log(data,"final")
