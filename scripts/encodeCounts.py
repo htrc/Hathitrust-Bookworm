@@ -1,4 +1,4 @@
-import sys, os, json, argparse
+import sys, os, json, argparse, gc
 import pandas as pd
 import multiprocessing as mp
 from tqdm import tqdm
@@ -122,6 +122,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder):
 		if os.stat(output_folder + store_name + SLASH + 'tmp-count-' + str(file_chunk_counter) + '.txt').st_size > 100 * 1024 * 1024:
 			file_chunk_counter = file_chunk_counter + 1
 
+	gc.collect()
 
 def encodeCounts(args):
 	if args.output_folder[-1:] != SLASH:
