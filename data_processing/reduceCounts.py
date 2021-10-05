@@ -116,9 +116,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				i = 0
 
 			while True:
-#				print("Memory usage:")
-#				print(psutil.swap_memory().percent)
-#				print(type(psutil.swap_memory().percent))
+				while(psutil.swap_memory().percent > 20.0):
+					logging.info("Memory usage too high. Swap at %d. Taking a short nap to relieve some pressure." % psutil.swap_memory().percent)
+					time.sleep(3 * 60)
+					
 				if batch:
 					start = i * batch_limit
 					logging.info("Starting batch %d for %s" % (i, lang))
