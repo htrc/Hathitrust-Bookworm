@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import multiprocessing as mp
 import logging
+import sys
 import os
 import gc
 from tqdm import tqdm # Progress bars!
@@ -11,6 +12,7 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar, Profiler, ResourceProfiler, CacheProfiler, visualize
 import time, datetime
 from datetime import timedelta
+import psutil
 
 def finalSort(data):
 	with pd.HDFStore(data + 'final/final.h5') as store:
@@ -114,6 +116,9 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				i = 0
 
 			while True:
+#				print("Memory usage:")
+#				print(psutil.swap_memory().percent)
+#				print(type(psutil.swap_memory().percent))
 				if batch:
 					start = i * batch_limit
 					logging.info("Starting batch %d for %s" % (i, lang))

@@ -4,7 +4,7 @@ from tqdm import tqdm # Progress bars!
 import multiprocessing as mp
 import numpy as np
 import logging
-import os, gc
+import sys, os, gc
 
 def get_last(storefile):
 	with pd.HDFStore(storefile, mode="a") as store:
