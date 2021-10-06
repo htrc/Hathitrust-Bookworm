@@ -116,7 +116,7 @@ def sumTokenCounts(stores,data):
 					logging.info("Success! Saving merged.")
 					# The /fromnodes table is the sum from all the different stores, but will need to be summed one more time
 					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
-						store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes})
+						store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes},index=(not batch))
 				except:
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
 
@@ -198,7 +198,7 @@ def reduceCounts(data,core_count):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=35000)
 
 	logging.info("Processing Started")
 
