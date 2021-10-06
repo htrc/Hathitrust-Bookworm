@@ -124,10 +124,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				i = 0
 
 			while True:
-				print("Memory usage %d" % psutil.virtual_memory().percent)
-				while(psutil.virtual_memory().percent > memory_threshold):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
-						time.sleep(3 * 60)
+#				print("Memory usage %d" % psutil.virtual_memory().percent)
+#				while(psutil.virtual_memory().percent > memory_threshold):
+#						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
+#						time.sleep(3 * 60)
 				if batch:
 					start = i * batch_limit
 					logging.info("Starting batch %d for %s" % (i, lang))
@@ -158,15 +158,15 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 					# The /fromnodes table is the sum from all the different stores, but will need to be summed one more time
 	#				with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
 	#					store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes})
-					print("Memory usage %d" % psutil.virtual_memory().percent)
-					while(psutil.virtual_memory().percent > memory_threshold):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
-						time.sleep(3 * 60)
+#					print("Memory usage %d" % psutil.virtual_memory().percent)
+#					while(psutil.virtual_memory().percent > memory_threshold):
+#						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
+#						time.sleep(3 * 60)
 					q.put({ 'lang': lang, 'full_merge': full_merge })
-					print("Memory usage %d" % psutil.virtual_memory().percent)
-					while(psutil.virtual_memory().percent > memory_threshold):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
-						time.sleep(3 * 60)
+#					print("Memory usage %d" % psutil.virtual_memory().percent)
+#					while(psutil.virtual_memory().percent > memory_threshold):
+#						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
+#						time.sleep(3 * 60)
 				except:
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
 
