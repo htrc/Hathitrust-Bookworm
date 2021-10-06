@@ -75,18 +75,19 @@ def token_sum_listener(q,savestore,max_str_bytes):
 			else:
 				#lang,full_merge,max_str_bytes
 				if 'lang' in results and 'full_merge' in results:
-					print("Started writing %s counts to %s" % (results['lang'], savestore))
+					print("Writing %s counts to %s - Started" % (results['lang'], savestore))
 					queue_size = q.qsize()
 					index_command = False
 					if queue_size == 0:
 						index_command = True
 					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
 						store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes},index=index_command)
-					print("Finished writing %s counts to %s. Remaining queue: %s" % (results['lang'], savestore,queue_size))
+					print("Writing %s counts to %s - Finished - Remaining queue: %s" % (results['lang'], savestore,queue_size))
 				else:
 					logging.error(result)
 
 def sumTokenCounts(storefile,chunksize,batch_limit,q):
+	big_languages = ['eng', 'ger', 'fre', 'lat', 'rus', 'jpn', 'ita', 'spa']
 	print(storefile)
 	logging.info("Next store: %s" % storefile)
 	try:
@@ -103,6 +104,13 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				logging.error("lang '%s' is not three alphanumeric characters. Skipping for now. (%s)" % (lang, storefile))
 				continue
 
+			memory_threshold = 85.0
+			if lang in big_languages:
+				memory_threshold = 45.0
+			while(psutil.virtual_memory().percent > memory_threshold):
+				logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
+				time.sleep(3 * 60)
+
 			try:
 				ddf = dd.read_hdf(storefile, '/merged1/'+lang, chunksize=chunksize, mode='r')
 			except:
@@ -117,8 +125,8 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 
 			while True:
 				print("Memory usage %d" % psutil.virtual_memory().percent)
-				while(psutil.virtual_memory().percent > 85.0):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.swap_memory().percent)
+				while(psutil.virtual_memory().percent > memory_threshold):
+						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
 						time.sleep(3 * 60)
 				if batch:
 					start = i * batch_limit
@@ -133,7 +141,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				try:
 					logging.info("Starting full merge for %s with %d partitions" % (lang, ddf.npartitions))
 
-					print("%s – %s : Starting full merge with %d partitions" % (storefile, lang, ddf.npartitions))
+					print("%s - %s : Starting full merge with %d partitions" % (storefile, lang, ddf.npartitions))
 					local_start_time = datetime.datetime.now().time()
 
 					full_merge = ddf.reset_index().groupby('token').sum().compute()
@@ -142,7 +150,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 					duration = datetime.datetime.combine(datetime.date.min,local_end_time)-datetime.datetime.combine(datetime.date.min,local_start_time)
 					if duration < timedelta(0):
 						duration = (timedelta(days=1) + duration)
-					print("%s – %s : Finished full merge with %d partitions – %s" % (storefile, lang, ddf.npartitions, duration))
+					print("%s - %s : Finished full merge with %d partitions – %s" % (storefile, lang, ddf.npartitions, duration))
 					#if lang == 'eng':
 						# For curiosity: see the profiling for English
 					#    prof.visualize()
@@ -151,13 +159,13 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 	#				with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
 	#					store.append(lang,full_merge,data_columns=['count'],min_itemsize = {'index': max_str_bytes})
 					print("Memory usage %d" % psutil.virtual_memory().percent)
-					while(psutil.virtual_memory().percent > 85.0):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.swap_memory().percent)
+					while(psutil.virtual_memory().percent > memory_threshold):
+						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
 						time.sleep(3 * 60)
 					q.put({ 'lang': lang, 'full_merge': full_merge })
 					print("Memory usage %d" % psutil.virtual_memory().percent)
-					while(psutil.virtual_memory().percent > 85.0):
-						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.swap_memory().percent)
+					while(psutil.virtual_memory().percent > memory_threshold):
+						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
 						time.sleep(3 * 60)
 				except:
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
