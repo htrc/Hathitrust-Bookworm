@@ -7,6 +7,7 @@ import logging
 import sys
 import os
 import gc
+import random
 from tqdm import tqdm # Progress bars!
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar, Profiler, ResourceProfiler, CacheProfiler, visualize
@@ -107,6 +108,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 			memory_threshold = 85.0
 			if lang in big_languages:
 				memory_threshold = 45.0
+				sleep_time = random.randrange(5*60)
+				print("Encountered big language %s, sleeping for %i to create a buffer" % sleep_time)
+				time.sleep(sleep_time)
+
 			while(psutil.virtual_memory().percent > memory_threshold):
 				logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
 				time.sleep(3 * 60)
