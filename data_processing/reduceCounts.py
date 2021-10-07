@@ -118,11 +118,13 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_
 				while not proceed:
 					if not big_lang_being_processed:
 						try:
-							with big_lang_lock:
-								print("HERE: %s" % os.getpid())
-								big_lang_being_processed.value = lang
-								proceed = True
-								print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
+#							with big_lang_lock:
+							big_lang_lock.acquire()
+							print("HERE: %s" % os.getpid())
+							big_lang_being_processed.value = lang
+							proceed = True
+							print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
+							big_lang_lock.release()
 						except:
 							logging.info("Failed to grab the big langusge slot")
 					time.sleep(5)
@@ -238,7 +240,7 @@ def triage(inputstore,data):
 	else:
 		return "%d errors on process %s, check logs" % (errors, os.getpid())
 
-def init_log(data,name=False):
+def init_log(data,big_lang_lock,name=False):
 	if not name:
 		name = os.getpid()
 	handler = logging.FileHandler(data + "logs/bw-%s.log" % name, 'a')
@@ -248,6 +250,9 @@ def init_log(data,name=False):
 	logger.setLevel(logging.INFO)
 	logger.addHandler(handler)
 	logging.info("Log initialized")
+
+	global lock
+	lock = big_lang_lock
 
 
 def listener(q):
@@ -275,7 +280,8 @@ def reduceCounts(data,core_count):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
+	big_lang_lock = manager.Lock()
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,big_lang_lock))
 
 	logging.info("Processing Started")
 
@@ -292,7 +298,6 @@ def reduceCounts(data,core_count):
 #	q.put('kill')
 
 	big_lang_being_processed = manager.Value(ctypes.c_wchar_p,None)
-	big_lang_lock = manager.Lock()
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
