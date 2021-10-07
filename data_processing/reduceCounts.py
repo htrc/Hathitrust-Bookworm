@@ -89,6 +89,7 @@ def token_sum_listener(q,savestore,max_str_bytes):
 						print(e)
 						sys.exit()
 					print("Writing %s counts to %s - Finished - Remaining queue: %s" % (results['lang'], savestore,queue_size))
+					gc.collect()
 				else:
 					logging.error(result)
 
@@ -124,10 +125,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 				logging.error("lang '%s' is not three alphanumeric characters. Skipping for now. (%s)" % (lang, storefile))
 				continue
 
-			if big_langs:
-				memory_threshold = 70.0
-			else:
-				memory_threshold = 85.0
+			memory_threshold = 85.0
 
 #				proceed = False
 #				while not proceed:
