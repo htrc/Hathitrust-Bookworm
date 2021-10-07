@@ -255,7 +255,7 @@ def triage(inputstore,data):
 	else:
 		return "%d errors on process %s, check logs" % (errors, os.getpid())
 
-def init_log(data,big_lang_lock,name=False):
+def init_log(data,name=False):
 	if not name:
 		name = os.getpid()
 	handler = logging.FileHandler(data + "logs/bw-%s.log" % name, 'a')
