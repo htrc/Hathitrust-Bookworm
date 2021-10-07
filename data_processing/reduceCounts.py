@@ -81,8 +81,12 @@ def token_sum_listener(q,savestore,max_str_bytes):
 					index_command = False
 					if queue_size == 0:
 						index_command = True
-					with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
-						store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes},index=index_command)
+					try:
+						with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+							store.append(results['lang'],results['full_merge'],data_columns=['count'],min_itemsize = {'index': max_str_bytes},index=index_command)
+					except Exception as e:
+						print(e)
+						sys.exit()
 					print("Writing %s counts to %s - Finished - Remaining queue: %s" % (results['lang'], savestore,queue_size))
 				else:
 					logging.error(result)
@@ -177,6 +181,8 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 
 				if batch == False:
 					break
+
+			gc.collect()
 	except:
 		logging.exception("Can't read languages from %s" % storefile)
 
