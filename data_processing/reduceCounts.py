@@ -91,7 +91,7 @@ def token_sum_listener(q,savestore,max_str_bytes):
 				else:
 					logging.error(result)
 
-def sumTokenCounts(storefile,chunksize,batch_limit,q):
+def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,q):
 	big_languages = ['eng', 'ger', 'fre', 'lat', 'rus', 'jpn', 'ita', 'spa']
 	print(storefile)
 	logging.info("Next store: %s" % storefile)
@@ -112,9 +112,17 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 			memory_threshold = 85.0
 			if lang in big_languages:
 				memory_threshold = 70.0
-				sleep_time = random.randrange(5*60)
-				print("Encountered big language %s, sleeping for %i to create a buffer" % (lang,sleep_time))
-				time.sleep(sleep_time)
+
+				proceed = False
+				while not proceed:
+					if not big_lang_being_processed:
+						try:
+							with big_lang_being_processed.get_lock():
+								big_lang_being_processed.value = lang
+								proceed = True
+						except:
+							logging.info("Failed to grab the big langusge slot")
+					time.sleep(5)
 
 			while(psutil.virtual_memory().percent > memory_threshold):
 				logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
@@ -182,6 +190,9 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 				if batch == False:
 					break
 
+			with big_lang_being_processed.get_lock():
+				big_lang_being_processed.value = None
+				
 			gc.collect()
 	except:
 		logging.exception("Can't read languages from %s" % storefile)
@@ -277,6 +288,7 @@ def reduceCounts(data,core_count):
 
 #	q.put('kill')
 
+	big_lang_being_processed = manager.Value('c_char_p',None)
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
@@ -287,7 +299,7 @@ def reduceCounts(data,core_count):
 	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
 	sum_jobs = []
 	for storefile in stores:
-		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q))
+		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,big_lang_being_processed,q))
 		sum_jobs.append(sum_job)
 
 	for sum_job in sum_jobs:
