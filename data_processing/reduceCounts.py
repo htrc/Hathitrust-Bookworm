@@ -289,7 +289,7 @@ def reduceCounts(data,core_count):
 
 #	q.put('kill')
 
-	big_lang_being_processed = mp.Value(ctypes.c_wchar_p,None)
+	big_lang_being_processed = manager.Value(ctypes.c_wchar_p,None)
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
