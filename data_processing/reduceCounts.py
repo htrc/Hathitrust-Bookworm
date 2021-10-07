@@ -192,7 +192,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,q):
 
 			with big_lang_being_processed.get_lock():
 				big_lang_being_processed.value = None
-				
+
 			gc.collect()
 	except:
 		logging.exception("Can't read languages from %s" % storefile)
@@ -288,7 +288,7 @@ def reduceCounts(data,core_count):
 
 #	q.put('kill')
 
-	big_lang_being_processed = manager.Value('c_char_p',None)
+	big_lang_being_processed = multiprocessing.Value('c_char_p',None)
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
