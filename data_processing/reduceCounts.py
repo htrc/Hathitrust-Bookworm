@@ -119,8 +119,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_
 					if not big_lang_being_processed:
 						try:
 							with big_lang_lock:
+								print("HERE: %s" % os.getpid())
 								big_lang_being_processed.value = lang
 								proceed = True
+								print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
 						except:
 							logging.info("Failed to grab the big langusge slot")
 					time.sleep(5)
