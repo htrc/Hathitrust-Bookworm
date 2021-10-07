@@ -92,7 +92,7 @@ def token_sum_listener(q,savestore,max_str_bytes):
 				else:
 					logging.error(result)
 
-def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,q):
+def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_lang_lock,q):
 	big_languages = ['eng', 'ger', 'fre', 'lat', 'rus', 'jpn', 'ita', 'spa']
 	print(storefile)
 	logging.info("Next store: %s" % storefile)
@@ -118,7 +118,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,q):
 				while not proceed:
 					if not big_lang_being_processed:
 						try:
-							with big_lang_being_processed.get_lock():
+							with big_lang_lock:
 								big_lang_being_processed.value = lang
 								proceed = True
 						except:
@@ -191,7 +191,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,q):
 				if batch == False:
 					break
 
-			with big_lang_being_processed.get_lock():
+			with big_lang_lock:
 				big_lang_being_processed.value = None
 
 			gc.collect()
@@ -290,6 +290,7 @@ def reduceCounts(data,core_count):
 #	q.put('kill')
 
 	big_lang_being_processed = manager.Value(ctypes.c_wchar_p,None)
+	big_lang_lock = manager.Lock()
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
@@ -300,7 +301,7 @@ def reduceCounts(data,core_count):
 	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
 	sum_jobs = []
 	for storefile in stores:
-		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,big_lang_being_processed,q))
+		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,big_lang_being_processed,big_lang_lock,q))
 		sum_jobs.append(sum_job)
 
 	for sum_job in sum_jobs:
