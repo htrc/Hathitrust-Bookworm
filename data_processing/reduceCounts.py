@@ -107,7 +107,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 
 			memory_threshold = 85.0
 			if lang in big_languages:
-				memory_threshold = 45.0
+				memory_threshold = 70.0
 				sleep_time = random.randrange(5*60)
 				print("Encountered big language %s, sleeping for %i to create a buffer" % (lang,sleep_time))
 				time.sleep(sleep_time)
@@ -259,17 +259,17 @@ def reduceCounts(data,core_count):
 
 	logging.info("Processing Started")
 
-	watcher = p.apply_async(listener, (q,))
+#	watcher = p.apply_async(listener, (q,))
 
-	jobs = []
-	for store in rawstores:
-		job = p.apply_async(triage,(store,data))
-		jobs.append(job)
+#	jobs = []
+#	for store in rawstores:
+#		job = p.apply_async(triage,(store,data))
+#		jobs.append(job)
 
-	for job in tqdm(jobs):
-		job.get()
+#	for job in tqdm(jobs):
+#		job.get()
 
-	q.put('kill')
+#	q.put('kill')
 
 
 	stores = glob.glob(data + "merged/*.h5")
