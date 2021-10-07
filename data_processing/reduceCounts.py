@@ -92,7 +92,7 @@ def token_sum_listener(q,savestore,max_str_bytes):
 				else:
 					logging.error(result)
 
-def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_lang_lock,q):
+def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 	big_languages = ['eng', 'ger', 'fre', 'lat', 'rus', 'jpn', 'ita', 'spa']
 	print(storefile)
 	logging.info("Next store: %s" % storefile)
@@ -100,6 +100,20 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_
 		# Get Unique languages
 		with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
 			langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
+
+		if not big_langs:
+			for bigl in big_languages:
+				try:
+					langs.remove(bigl)
+				except:
+					logging.info("Tried to remove %s from language list, but it already wasn't in %s" % (bigl,storefile))
+		else:
+			big_lang_set = []
+			for bigl in big_languages:
+				if bigl in langs:
+					big_lang_set.append(bigl)
+
+			langs = set(big_lang_set)
 
 		for lang in langs:
 			batch = False
@@ -110,24 +124,25 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_
 				logging.error("lang '%s' is not three alphanumeric characters. Skipping for now. (%s)" % (lang, storefile))
 				continue
 
-			memory_threshold = 85.0
-			if lang in big_languages:
+			if big_langs:
 				memory_threshold = 70.0
+			else:
+				memory_threshold = 85.0
 
-				proceed = False
-				while not proceed:
-					if not big_lang_being_processed:
-						try:
+#				proceed = False
+#				while not proceed:
+#					if not big_lang_being_processed:
+#						try:
 #							with big_lang_lock:
-							big_lang_lock.acquire()
-							print("HERE: %s" % os.getpid())
-							big_lang_being_processed.value = lang
-							proceed = True
-							print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
-							big_lang_lock.release()
-						except:
-							logging.info("Failed to grab the big langusge slot")
-					time.sleep(5)
+#							big_lang_lock.acquire()
+#							print("HERE: %s" % os.getpid())
+#							big_lang_being_processed.value = lang
+#							proceed = True
+#							print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
+#							big_lang_lock.release()
+#						except:
+#							logging.info("Failed to grab the big langusge slot")
+#					time.sleep(5)
 
 			while(psutil.virtual_memory().percent > memory_threshold):
 				logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
@@ -195,8 +210,8 @@ def sumTokenCounts(storefile,chunksize,batch_limit,big_lang_being_processed,big_
 				if batch == False:
 					break
 
-			with big_lang_lock:
-				big_lang_being_processed.value = None
+#			with big_lang_lock:
+#				big_lang_being_processed.value = None
 
 			gc.collect()
 	except:
@@ -251,9 +266,6 @@ def init_log(data,big_lang_lock,name=False):
 	logger.addHandler(handler)
 	logging.info("Log initialized")
 
-	global lock
-	lock = big_lang_lock
-
 
 def listener(q):
 	i = 0
@@ -280,8 +292,7 @@ def reduceCounts(data,core_count):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	big_lang_lock = manager.Lock()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,big_lang_lock))
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
 
 	logging.info("Processing Started")
 
@@ -297,8 +308,6 @@ def reduceCounts(data,core_count):
 
 #	q.put('kill')
 
-	big_lang_being_processed = manager.Value(ctypes.c_wchar_p,None)
-
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
 	chunksize = 100000
@@ -308,11 +317,14 @@ def reduceCounts(data,core_count):
 	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
 	sum_jobs = []
 	for storefile in stores:
-		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,big_lang_being_processed,big_lang_lock,q))
+		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q))
 		sum_jobs.append(sum_job)
 
 	for sum_job in sum_jobs:
 		sum_job.get()
+
+	for storefile in stores:
+		sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=True)
 
 	print("Token summing complete")
 	while(q.qsize() > 0):
