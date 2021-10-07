@@ -8,6 +8,7 @@ import sys
 import os
 import gc
 import random
+import ctypes
 from tqdm import tqdm # Progress bars!
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar, Profiler, ResourceProfiler, CacheProfiler, visualize
@@ -288,7 +289,7 @@ def reduceCounts(data,core_count):
 
 #	q.put('kill')
 
-	big_lang_being_processed = mp.Value('c_wchar_p')
+	big_lang_being_processed = mp.Value(ctypes.c_wchar_p,None)
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
