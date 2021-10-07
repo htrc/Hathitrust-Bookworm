@@ -109,7 +109,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q):
 			if lang in big_languages:
 				memory_threshold = 45.0
 				sleep_time = random.randrange(5*60)
-				print("Encountered big language %s, sleeping for %i to create a buffer" % sleep_time)
+				print("Encountered big language %s, sleeping for %i to create a buffer" % (lang,sleep_time))
 				time.sleep(sleep_time)
 
 			while(psutil.virtual_memory().percent > memory_threshold):
