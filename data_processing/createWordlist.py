@@ -1,6 +1,6 @@
 import pandas as pd
 import dask.dataframe as dd
-import os
+import os, sys
 import re as regex
 import numpy as np
 from htrc_features import FeatureReader, utils
@@ -176,7 +176,7 @@ def createWordlist(features,data,core_count):
 
 	df = pd.read_hdf(data + 'final/wordlist.h5')
 	df.to_csv(data + 'final/wordlist.csv',sep='\t',index=False)
-	testAgainstDictionaries(features,data,final)
+#	testAgainstDictionaries(features,data,final)
 
 if __name__ == "__main__":
 	createWordlist(sys.argv[1],sys.argv[2],sys.argv[3])
