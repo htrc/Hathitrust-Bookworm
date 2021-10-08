@@ -158,10 +158,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 				i = 0
 
 			while True:
-#				print("Memory usage %d" % psutil.virtual_memory().percent)
-#				while(psutil.virtual_memory().percent > memory_threshold):
-#						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
-#						time.sleep(3 * 60)
+				print("Memory usage %d" % psutil.virtual_memory().percent)
+				while(psutil.virtual_memory().percent > memory_threshold):
+						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
+						time.sleep(3 * 60)
 				if batch:
 					start = i * batch_limit
 					logging.info("Starting batch %d for %s" % (i, lang))
@@ -201,7 +201,10 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 #					while(psutil.virtual_memory().percent > memory_threshold):
 #						logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
 #						time.sleep(3 * 60)
-				except:
+				except Exception as e:
+					if e == BrokenPipeError:
+						print(e)
+						sys.exit()
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
 
 				gc.collect()
