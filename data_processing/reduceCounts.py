@@ -75,7 +75,6 @@ def token_sum_listener(q,savestore,max_str_bytes):
 				print("Results say kill")
 				break
 			else:
-				#lang,full_merge,max_str_bytes
 				if 'lang' in results and 'full_merge' in results:
 					print("Writing %s counts to %s - Started" % (results['lang'], savestore))
 					queue_size = q.qsize()
@@ -125,7 +124,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 				logging.error("lang '%s' is not three alphanumeric characters. Skipping for now. (%s)" % (lang, storefile))
 				continue
 
-			memory_threshold = 85.0
+			memory_threshold = 90.0
 
 #				proceed = False
 #				while not proceed:
