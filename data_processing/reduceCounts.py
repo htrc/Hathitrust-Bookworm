@@ -91,7 +91,7 @@ def token_sum_listener(q,savestore,max_str_bytes):
 					print("Writing %s counts to %s - Finished - Remaining queue: %s" % (results['lang'], savestore,queue_size))
 					gc.collect()
 				else:
-					logging.error(result)
+					logging.error(results)
 
 def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 	big_languages = ['eng', 'ger', 'fre', 'lat', 'rus', 'jpn', 'ita', 'spa']
@@ -279,10 +279,10 @@ def listener(q):
 #				print("Results say kill")
 				break
 			else:
-				if result == "success":
+				if results == "success":
 					logging.info("Done processing batch %d" % i)
 				else:
-					logging.error(result)
+					logging.error(results)
 
 def reduceCounts(data,core_count):
 	init_log(data,"final")
@@ -290,7 +290,7 @@ def reduceCounts(data,core_count):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=35000)
 
 	logging.info("Processing Started")
 

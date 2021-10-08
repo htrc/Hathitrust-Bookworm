@@ -1,0 +1,69 @@
+#[client]
+#socket = /var/run/mysqld/mysqld.sock
+
+#[mysqld_safe]
+#socket = /var/run/mysqld/mysqld.sock
+#nice = 0
+
+[mysqld]
+#log-error	= /var/log/mysql/error.log
+#general_log_file        = /var/log/mysql/general.log
+#general_log             = 1
+# TEMPORARY: LOGGING SLOW QUERIES
+#slow_query_log = 1
+#slow_query_log_file = /var/log/mysql/slow.log
+#long_query_time = 5
+#log_queries_not_using_indexes = 1
+
+#pid-file = /var/run/mysqld/mysqld.pid
+#socket = /var/run/mysqld/mysqld.sock
+#port = 3306
+#basedir = /usr
+#datadir = /data/mysql/mysqldata/
+#tmpdir = /data/mysql/mysqltmp/
+#lc-messages-dir = /usr/share/mysql
+tmp_table_size = 4G
+max_heap_table_size = 4G
+skip-external-locking
+bind-address = 127.0.0.1
+key_buffer = 16M
+max_allowed_packet = 16M
+thread_stack = 192K
+thread_cache_size = 8
+myisam-recover = BACKUP
+#max_connections        = 100
+#table_cache            = 64
+#thread_concurrency     = 10
+query_cache_limit = 1M
+query_cache_size = 16M
+expire_logs_days = 10
+max_binlog_size = 100M
+read_rnd_buffer_size = 16M
+read_buffer_size = 16M
+character_set_server = utf8
+bulk_insert_buffer_size = 2G
+# This space needs to be available in the dir
+# where the .MYI index file reside
+myisam_max_sort_file_size = 9500G
+myisam_sort_buffer_size = 4G
+myisam_repair_threads = 1
+sort_buffer_size = 16M
+# This should be fine for up to 25% of machine's memory
+key_buffer_size = 4G
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet	= 16M
+
+[mysql]
+#no-auto-rehash	# faster start of mysql but no tab completition
+
+[isamchk]
+key_buffer		= 16M
+
+#
+# * IMPORTANT: Additional settings that can override those from this file!
+#   The files must end with '.cnf', otherwise they'll be ignored.
+#
+!includedir /etc/mysql/conf.d/
