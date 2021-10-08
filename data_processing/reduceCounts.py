@@ -101,19 +101,19 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 		with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
 			langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
 
-#		if not big_langs:
-#			for bigl in big_languages:
-#				try:
-#					langs.remove(bigl)
-#				except:
-#					logging.info("Tried to remove %s from language list, but it already wasn't in %s" % (bigl,storefile))
-#		else:
-#			big_lang_set = []
-#			for bigl in big_languages:
-#				if bigl in langs:
-#					big_lang_set.append(bigl)
-#
-#			langs = set(big_lang_set)
+		if not big_langs:
+			for bigl in big_languages:
+				try:
+					langs.remove(bigl)
+				except:
+					logging.info("Tried to remove %s from language list, but it already wasn't in %s" % (bigl,storefile))
+		else:
+			big_lang_set = []
+			for bigl in big_languages:
+				if bigl in langs:
+					big_lang_set.append(bigl)
+
+			langs = set(big_lang_set)
 
 		for lang in langs:
 			batch = False
@@ -125,21 +125,6 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 				continue
 
 			memory_threshold = 90.0
-
-#				proceed = False
-#				while not proceed:
-#					if not big_lang_being_processed:
-#						try:
-#							with big_lang_lock:
-#							big_lang_lock.acquire()
-#							print("HERE: %s" % os.getpid())
-#							big_lang_being_processed.value = lang
-#							proceed = True
-#							print("Got the lock. Set the big value to %s" % big_lang_being_processed.value)
-#							big_lang_lock.release()
-#						except:
-#							logging.info("Failed to grab the big langusge slot")
-#					time.sleep(5)
 
 			while(psutil.virtual_memory().percent > memory_threshold):
 				logging.info("Memory usage too high. Usage at %d. Taking a short nap to relieve some pressure." % psutil.virtual_memory().percent)
@@ -211,9 +196,6 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 
 				if batch == False:
 					break
-
-#			with big_lang_lock:
-#				big_lang_being_processed.value = None
 
 			gc.collect()
 	except:
@@ -294,7 +276,7 @@ def reduceCounts(data,core_count):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=35000)
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
 
 	logging.info("Processing Started")
 
@@ -325,8 +307,34 @@ def reduceCounts(data,core_count):
 	for sum_job in sum_jobs:
 		sum_job.get()
 
-#	for storefile in stores:
-#		sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=True)
+	print("Token summing complete")
+	while(q.qsize() > 0):
+		print("Waiting to write %s language sums to %s" % (q.qsize(),savestore))
+		time.sleep(60)
+
+	last_write_unfinished = True
+	while(last_write_unfinished):
+		try:
+			with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+				last_write_unfinished = False
+		except:
+			print("Waiting for final write to %s to finish" % savestore)
+			time.sleep(60)
+
+	q.put('kill')
+	p.close()
+	p.join()
+
+	p = mp.Pool(4,initializer=init_log,initargs=(data,))
+	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
+
+	big_sum_jobs = []
+	for storefile in stores:
+		big_sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q,big_langs=True))
+		big_sum_jobs.append(big_sum_job)
+
+	for big_sum_job in big_sum_jobs:
+		big_sum_job.get()
 
 	print("Token summing complete")
 	while(q.qsize() > 0):
@@ -343,6 +351,8 @@ def reduceCounts(data,core_count):
 			time.sleep(60)
 
 	q.put('kill')
+	p.close()
+	p.join()
 
 #	sumTokenCounts(glob.glob(data + "merged/*.h5"),data)
 	finalCombine(glob.glob(data + 'final/fromnodes*h5'),data)
@@ -355,8 +365,8 @@ def reduceCounts(data,core_count):
 	print(pd.Series(sizes, index=keys).sort_values(ascending=False).shape)
 
 #	q.put('kill')
-	p.close()
-	p.join()
+#	p.close()
+#	p.join()
 
 if __name__ == "__main__":
 	reduceCounts(sys.argv[1],sys.argv[2])
