@@ -102,19 +102,19 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 		with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
 			langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
 
-		if not big_langs:
-			for bigl in big_languages:
-				try:
-					langs.remove(bigl)
-				except:
-					logging.info("Tried to remove %s from language list, but it already wasn't in %s" % (bigl,storefile))
-		else:
-			big_lang_set = []
-			for bigl in big_languages:
-				if bigl in langs:
-					big_lang_set.append(bigl)
-
-			langs = set(big_lang_set)
+#		if not big_langs:
+#			for bigl in big_languages:
+#				try:
+#					langs.remove(bigl)
+#				except:
+#					logging.info("Tried to remove %s from language list, but it already wasn't in %s" % (bigl,storefile))
+#		else:
+#			big_lang_set = []
+#			for bigl in big_languages:
+#				if bigl in langs:
+#					big_lang_set.append(bigl)
+#
+#			langs = set(big_lang_set)
 
 		for lang in langs:
 			batch = False
@@ -309,7 +309,7 @@ def reduceCounts(data,core_count):
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
 	chunksize = 100000
-	batch_limit = 6*10**8
+	batch_limit = 2*10**7
 	savestore = data + "final/fromnodes-323.h5"
 
 	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
@@ -321,8 +321,8 @@ def reduceCounts(data,core_count):
 	for sum_job in sum_jobs:
 		sum_job.get()
 
-	for storefile in stores:
-		sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=True)
+#	for storefile in stores:
+#		sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=True)
 
 	print("Token summing complete")
 	while(q.qsize() > 0):
