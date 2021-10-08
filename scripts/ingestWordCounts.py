@@ -44,7 +44,7 @@ def ingestWordCounts(args):
 			subprocess.run("mv " + os.path.join(working_folder,subdirectory) + "/*.txt " + working_folder,shell=True)
 
 #			ingest_command = ["bookworm","-l","debug","prep","database_wordcounts","--no-delete"]
-			ingest_command = ["bookworm","prep","database_wordcounts","--no-delete"]
+			ingest_command = ["bookworm","-l","debug","prep","database_wordcounts","--no-delete"]
 			if first:
 				ingest_command = ingest_command[:-1]
 				first = False

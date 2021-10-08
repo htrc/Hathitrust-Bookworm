@@ -135,7 +135,7 @@ def encodeCounts(args):
 		vol_dict = json.load(volumelist_file)
 
 	if args.multi_file_processing:
-		print("Each .h5 file will be turned into an indeterminate number of files with a max size")
+		print("Each .h5 file will be turned into an indeterminate number of files, each of which are around 100MB.")
 		with mp.Pool(int(args.core_count)) as pool:
 			jobs = []
 
