@@ -204,6 +204,8 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 				except:
 					logging.exception("Can't compute or save lang for %s in %s" % (lang, storefile))
 
+				gc.collect()
+
 				if batch == False:
 					break
 
