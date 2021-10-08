@@ -330,7 +330,7 @@ def reduceCounts(data,core_count):
 
 	big_sum_jobs = []
 	for storefile in stores:
-		big_sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q,big_langs=True))
+		big_sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q,True))
 		big_sum_jobs.append(big_sum_job)
 
 	for big_sum_job in big_sum_jobs:
