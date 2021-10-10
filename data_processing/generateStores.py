@@ -279,7 +279,7 @@ def generateStores(features,data,core_count):
 	print(os.getpid())
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=35000)
 
 	starttime = time.time()
 	logging.info("Starting parallel job")
