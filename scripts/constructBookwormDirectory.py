@@ -14,6 +14,7 @@ def constructBookwormDirectory(bookworm_directory):
 	os.mkdir(bookworm_directory + 'texts/encoded')
 	os.mkdir(bookworm_directory + 'texts/encoded/unigrams')
 	os.mkdir(bookworm_directory + 'texts/encoded/bigrams')
+	os.mkdir(bookworm_directory + 'texts/encoded/completed')
 
 if __name__ == "__main__":
 	constructBookwormDirectory(sys.argv[1])

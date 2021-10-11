@@ -33,6 +33,11 @@ def validateInput(input_folder):
 #This assumes there are multiple directoreis in .bookworm/texts/encoded/unigrams that each contain multiple text files that store the encoded word counts
 def ingestWordCounts(args):
 	working_folder = validateInput(args.target_folder)
+	input_folder = args.target_folder
+	if input_folder[-1:] != SLASH:
+		input_folder = input_folder + SLASH
+	completed_folder = input_folder + 'texts/encoded/unigrams'
+
 	if working_folder:
 		subdirectories = os.listdir(working_folder)
 		if '.DS_Store' in subdirectories:
@@ -51,6 +56,7 @@ def ingestWordCounts(args):
 #			print(ingest_command)
 			results = subprocess.call(ingest_command)
 			subprocess.run("mv " + working_folder + "/*.txt " + os.path.join(working_folder,subdirectory),shell=True)
+			subprocess.run("mv " + subdirectory + " " + completed_folder,shell=True)
 	else:
 		sys.exit()
 
