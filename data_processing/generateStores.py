@@ -272,14 +272,15 @@ def generateStores(features,data,core_count):
 	chunk_size = 25
 	remaining_paths = np.setdiff1d(paths, get_processed(features))
 	print("%d paths remaining" % len(remaining_paths))
-	n = 10000000
+#	n = 10000000
+	n = 17123746
 	start = 0
 	chunked_paths = [remaining_paths[start+i:start+i+chunk_size] for i in range(0, len(remaining_paths[start:start+n]), chunk_size)]
 
 	print(os.getpid())
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=35000)
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=1400)
 
 	starttime = time.time()
 	logging.info("Starting parallel job")
@@ -299,23 +300,23 @@ def generateStores(features,data,core_count):
 	logging.info(time.time()-starttime)
 	q.put('kill')
 
-	import glob
-	storestocheck = glob.glob(data + "stores/*h5")
-	watcher = p.apply_async(store_check_listener, (q,successfile))
-	store_check_jobs = []
-	last = []
-	for store in storestocheck:
-		print(store)
-		last.append(get_last(store))
-		print(last[-1])
-		store_check_job = p.apply_async(check_for_processed,(store,features,q))
-		store_check_jobs.append(store_check_job)
-	print(last)
-
-	for store_check_job in tqdm(store_check_jobs):
-		store_check_job.get()
-
-	q.put('kill')
+#	import glob
+#	storestocheck = glob.glob(data + "stores/*h5")
+#	watcher = p.apply_async(store_check_listener, (q,successfile))
+#	store_check_jobs = []
+#	last = []
+#	for store in storestocheck:
+#		print(store)
+#		last.append(get_last(store))
+#		print(last[-1])
+#		store_check_job = p.apply_async(check_for_processed,(store,features,q))
+#		store_check_jobs.append(store_check_job)
+#	print(last)
+#
+#	for store_check_job in tqdm(store_check_jobs):
+#		store_check_job.get()
+#
+#	q.put('kill')
 	p.close()
 	p.join()
 
