@@ -295,8 +295,8 @@ def reduceCounts(data,core_count):
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
 	chunksize = 100000
-#	batch_limit = 2*10**7
-	batch_limit = 6*10**8
+	batch_limit = 2*10**7
+#	batch_limit = 6*10**8
 	savestore = data + "final/fromnodes-323.h5"
 
 #	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
