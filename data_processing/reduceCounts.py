@@ -280,51 +280,52 @@ def reduceCounts(data,core_count):
 
 	logging.info("Processing Started")
 
-#	watcher = p.apply_async(listener, (q,))
-#
-#	jobs = []
-#	for store in rawstores:
-#		job = p.apply_async(triage,(store,data))
-#		jobs.append(job)
-#
-#	for job in tqdm(jobs):
-#		job.get()
-#
-#	q.put('kill')
+	watcher = p.apply_async(listener, (q,))
+
+	jobs = []
+	for store in rawstores:
+		job = p.apply_async(triage,(store,data))
+		jobs.append(job)
+
+	for job in tqdm(jobs):
+		job.get()
+
+	q.put('kill')
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
 	chunksize = 100000
-	batch_limit = 2*10**7
-#	batch_limit = 6*10**8
+#	batch_limit = 2*10**7
+	#It runs much faster when large languages aren't split into batches. Batches also don't seem to reduce memory usage, so the big batch_limit value is the clear winner here
+	batch_limit = 6*10**8
 	savestore = data + "final/fromnodes-323.h5"
 
-#	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
-#	sum_jobs = []
-#	for storefile in stores:
-#		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q))
-#		sum_jobs.append(sum_job)
-#
-#	for sum_job in sum_jobs:
-#		sum_job.get()
-#
-#	print("Token summing complete")
-#	while(q.qsize() > 0):
-#		print("Waiting to write %s language sums to %s" % (q.qsize(),savestore))
-#		time.sleep(60)
-#
-#	last_write_unfinished = True
-#	while(last_write_unfinished):
-#		try:
-#			with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
-#				last_write_unfinished = False
-#		except:
-#			print("Waiting for final write to %s to finish" % savestore)
-#			time.sleep(60)
-#
-#	q.put('kill')
-#	p.close()
-#	p.join()
+	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
+	sum_jobs = []
+	for storefile in stores:
+		sum_job = p.apply_async(sumTokenCounts,(storefile,chunksize,batch_limit,q))
+		sum_jobs.append(sum_job)
+
+	for sum_job in sum_jobs:
+		sum_job.get()
+
+	print("Token summing complete")
+	while(q.qsize() > 0):
+		print("Waiting to write %s language sums to %s" % (q.qsize(),savestore))
+		time.sleep(60)
+
+	last_write_unfinished = True
+	while(last_write_unfinished):
+		try:
+			with pd.HDFStore(savestore, complevel=9, mode="a", complib='blosc') as store:
+				last_write_unfinished = False
+		except:
+			print("Waiting for final write to %s to finish" % savestore)
+			time.sleep(60)
+
+	q.put('kill')
+	p.close()
+	p.join()
 
 	p = mp.Pool(4,initializer=init_log,initargs=(data,))
 	watcher = p.apply_async(token_sum_listener, (q,savestore,max_str_bytes))
@@ -354,7 +355,6 @@ def reduceCounts(data,core_count):
 	q.put('kill')
 	p.close()
 	p.join()
-	sys.exit()
 
 #	sumTokenCounts(glob.glob(data + "merged/*.h5"),data)
 	finalCombine(glob.glob(data + 'final/fromnodes*h5'),data)

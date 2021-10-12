@@ -103,7 +103,8 @@ def findProblemDFS(cutoff_list,dfs,problem_dfs,data):
 		dfs.append(df)
 
 def trim_topwords(row):
-	top_words_ref = dict(eng=900000, ger=650000, fre=400000, lat=360000, rus=280000, jpn=300000, ita=220000, spa=220000)
+#	top_words_ref = dict(eng=900000, ger=650000, fre=400000, lat=360000, rus=280000, jpn=300000, ita=220000, spa=220000)
+	top_words_ref = dict(eng=2300000, ger=1350000, fre=900000, lat=900000, rus=900000, jpn=750000, ita=750000, spa=750000)
 
 	if row[0][1:] in top_words_ref:
 		return top_words_ref[row[0][1:]]
@@ -112,9 +113,9 @@ def trim_topwords(row):
 		# something BW wouldn't be useful for
 		return 0
 	else:
-		# Other languages: keep greater of 25k or 5% of vocab
-		mincount = 20000
-		percentagetrim = int(row[1] * 0.035)
+		# Other languages: keep greater of 40k or 8% of vocab
+		mincount = 40000
+		percentagetrim = int(row[1] * 0.08)
 		return percentagetrim if percentagetrim > mincount else mincount
 
 def createWordlist(features,data,core_count):
