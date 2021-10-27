@@ -149,7 +149,7 @@ def createWordlist(features,data,core_count):
 
 	prob_chars = asn_probchars.reset_index().query('token != "\u200b"')
 	print(prob_chars)
-	prob_chars['broken'] =prob_chars['token']
+	prob_chars['broken'] = prob_chars['token']
 	prob_chars['token'] = prob_chars['broken'].str.replace('\u200b', '')
 
 	final = addProblemCharactersToWordlist(final_candidate,prob_chars)

@@ -207,7 +207,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 def triage(inputstore,data):
 	chunksize = 100000
 	storefolder = 'merged1' # this is in the h5 hierarchy
-	outputstorename = data + "merged/merge-%s.h5" % os.getpid()
+	outputstorename = data + "merged/merge-%s.h5" % inputstore[inputstore.rfind('_')+1:-3]
 	max_str_bytes = 50
 
 	errors = 0

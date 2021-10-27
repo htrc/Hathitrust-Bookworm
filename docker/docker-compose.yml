@@ -5,6 +5,7 @@ services:
     container_name: "mysql"
     volumes:
       - "mysql-db:/var/lib/mysql"
+      - "~/Documents/GitHub/Bookworm/docker/cnf:/etc/mysql/conf.d"
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=1
       - MYSQL_ROOT_HOST=172.*.*.*
