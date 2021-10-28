@@ -291,6 +291,7 @@ def reduceCounts(data,core_count):
 		job.get()
 
 	q.put('kill')
+	sys.exit()
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
