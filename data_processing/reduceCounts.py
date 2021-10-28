@@ -98,7 +98,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 	logging.info("Next store: %s" % storefile)
 	try:
 		# Get Unique languages
-		with pd.HDFStore(storefile, complevel=9, mode="a", complib='blosc') as store:
+		with pd.HDFStore(storefile, complevel=9, mode="r", complib='blosc') as store:
 			langs = set([key.split("/", maxsplit=-1)[-1] for key in store.keys() if 'merged1' in key])
 
 		if not big_langs:
