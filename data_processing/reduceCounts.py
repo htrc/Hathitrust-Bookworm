@@ -204,7 +204,7 @@ def sumTokenCounts(storefile,chunksize,batch_limit,q,big_langs=False):
 #	logging.info("Finished processing %s. Removing to reduce space.")
 #	os.remove(storefile)
 
-def triage(inputstore,data):
+def triage(inputstore,data,q):
 	chunksize = 100000
 	storefolder = 'merged1' # this is in the h5 hierarchy
 	outputstorename = data + "merged/merge-%s.h5" % inputstore[inputstore.rfind('_')+1:-3]
@@ -235,9 +235,26 @@ def triage(inputstore,data):
 				gc.collect()
 	gc.collect()
 	if errors == 0:
-		return "success"
+		q.put(inputstore)
+		return inputstore
 	else:
+		q.put("%d errors on process %s, check logs" % (errors, os.getpid()))
 		return "%d errors on process %s, check logs" % (errors, os.getpid())
+
+def remove_incomplete_merges(rawstores,mergedstores,data):
+	for store in rawstores:
+		checkfile = data + 'merged/merge-' + store[store.rfind('_')+1:]
+		if checkfile in mergedstores:
+			print("Removing incomplete file %s" % checkfile)
+			os.remove(checkfile)
+
+def get_unprocessed_stores(rawstores,successfile):
+	try:
+		with open(successfile, "r") as f:
+			paths = f.read().strip().split("\n")
+		return np.setdiff1d(rawstores,paths,True)
+	except:
+		return rawstores
 
 def init_log(data,name=False):
 	if not name:
@@ -251,13 +268,10 @@ def init_log(data,name=False):
 	logging.info("Log initialized")
 
 
-def listener(q):
-	i = 0
-
+def listener(q,successfile):
 	while(1):
 		results = q.get()
 
-		i += 1
 		if results:
 #			print("Got Results")
 #			print(os.getpid())
@@ -265,32 +279,42 @@ def listener(q):
 #				print("Results say kill")
 				break
 			else:
-				if results == "success":
-					logging.info("Done processing batch %d" % i)
+				if results[-3:] == ".h5":
+					with open(successfile,'a') as f:
+						f.write(results + "\n")
+					logging.info("Done processing batch %s" % results)
 				else:
 					logging.error(results)
 
 def reduceCounts(data,core_count):
 	init_log(data,"final")
+	successfile = data + "successful-merges.txt"
 	rawstores = glob.glob(data + "stores/*h5")
+	rawstores = get_unprocessed_stores(rawstores,successfile)
+	remove_incomplete_merges(rawstores,glob.glob(data + "merged/*h5"),data)
+#	sys.exit()
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,),maxtasksperchild=1)
 
 	logging.info("Processing Started")
 
-	watcher = p.apply_async(listener, (q,))
+	watcher = p.apply_async(listener, (q,successfile))
 
 	jobs = []
 	for store in rawstores:
-		job = p.apply_async(triage,(store,data))
+		job = p.apply_async(triage,(store,data,q))
 		jobs.append(job)
 
 	for job in tqdm(jobs):
 		job.get()
 
 	q.put('kill')
+	p.close()
+	p.join()
+
+	p = mp.Pool(int(core_count),initializer=init_log,initargs=(data,))
 
 	stores = glob.glob(data + "merged/*.h5")
 	max_str_bytes = 50
