@@ -292,7 +292,6 @@ def reduceCounts(data,core_count):
 	rawstores = glob.glob(data + "stores/*h5")
 	rawstores = get_unprocessed_stores(rawstores,successfile)
 	remove_incomplete_merges(rawstores,glob.glob(data + "merged/*h5"),data)
-#	sys.exit()
 
 	manager = mp.Manager()
 	q = manager.Queue()

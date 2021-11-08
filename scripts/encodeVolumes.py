@@ -1,4 +1,4 @@
-import sys, os, json
+import sys, os, json, csv
 
 if os.name == 'nt':
 	SLASH = '\\'
@@ -13,12 +13,15 @@ def encodeVolumes(vol_ids,output_folder):
 
 	vol_encodings = {}
 	with open(vol_ids,'r') as vol_ids_text:
-		line = vol_ids_text.readline()
-		counter = 1
-		while line:
-			vol_encodings[line.strip()] = counter
-			line = vol_ids_text.readline()
-			counter = counter + 1
+		line_reader = csv.reader(vol_ids_text, delimiter="\t")
+#		line = vol_ids_text.readline()
+#		counter = 1
+		for line in line_reader:
+			vol_encodings[line[1]] = line[0]
+#		while line:
+#			vol_encodings[line.strip()] = counter
+#			line = vol_ids_text.readline()
+#			counter = counter + 1
 
 	with open(output_folder + 'volumelist.json','w') as outfile:
 		json.dump(vol_encodings,outfile)

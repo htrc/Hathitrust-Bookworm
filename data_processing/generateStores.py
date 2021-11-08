@@ -295,7 +295,6 @@ def generateStores(features,data,core_count):
 	for job in tqdm(jobs):
 		job.get()
 
-
 	logging.info("Done")
 	logging.info(time.time()-starttime)
 	q.put('kill')

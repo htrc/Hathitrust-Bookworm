@@ -80,7 +80,10 @@ def testJunkRemovalRules(wordlist):
 	print(len(~blankchar))
 	junk = wordlist[~hyphenated & ~alphaadv & (tlen >= 2) & ~endwithperiod & ~singlequote & ~number & ~abbr & ~blankchar]
 	print(junk.head(10))
-	print(junk.sample(10))
+	try:
+		print(junk.sample(10))
+	except:
+		pass
 
 	final_candidate = wordlist[hyphenated | alphaadv | (tlen < 2) | endwithperiod | singlequote | number | abbr | blankchar].reset_index()
 	return final_candidate
@@ -142,7 +145,7 @@ def createWordlist(features,data,core_count):
 	wordlist = pd.concat(dfs).groupby(level='token').sum().sort_values('count', ascending=False)
 	print("Final wordlist using top N trim criteria: ", wordlist.shape)
 
-	testTrimPolicy(data,start=0)
+#	testTrimPolicy(data,start=0)
 
 	final_candidate = testJunkRemovalRules(wordlist)
 #	testJunkRemovalRules(pd.read_hdf(data + 'final/final-sorted.h5', 'hin', stop=1000000).head())
