@@ -1,6 +1,7 @@
-import sys, os, json, argparse, gc
+import sys, os, json, argparse, gc, glob
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
 from tqdm import tqdm
 
 if os.name == 'nt':
@@ -96,8 +97,20 @@ def parallelEncodeH5File(core_count,counts,word_dict,vol_dict,output_folder,outp
 	pool.close()
 	pool.join()
 
+def get_unencoded_stores(rawstores,successfile,store_path):
+	try:
+		with open(successfile, "r") as f:
+			paths = f.read().strip().split("\n")
+		return np.setdiff1d([ r[len(store_path + 'bw_counts_'):-3] for r in rawstores ],paths,True)
+	except:
+		return [ r[len(store_path + 'bw_counts_'):-3] for r in rawstores ]
 
-def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size):
+def remove_incomplete_encodings(unencoded_store_ids,encoded_count_files,output_folder):
+	for f in encoded_count_files:
+		if f[len(output_folder + 'tmp-count-'):f.rfind('-')] in unencoded_store_ids:
+			os.remove(f)
+
+def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 	store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=1000000)
 	store_name = counts[counts.rfind('/')+1:-3]
 	store_number = store_name[store_name.rfind("_")+1:]
@@ -123,13 +136,38 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size):
 		if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
 			file_chunk_counter = file_chunk_counter + 1
 
+	q.put(store_number)
+
 	gc.collect()
+
+def listener(q,successfile):
+	while(1):
+		results = q.get()
+
+		if results:
+			if results == 'kill':
+				break
+			else:
+				with open(successfile,'a') as f:
+					f.write(results + "\n")
 
 def encodeCounts(args):
 	if args.output_folder[-1:] != SLASH:
 		args.output_folder = args.output_folder + SLASH
 
+	if args.counts_folder[-1:] != SLASH:
+		args.counts_folder = args.counts_folder + SLASH
+
+	successfile = "successful-encodings.txt"
+	rawstores = glob.glob(args.counts_folder + "*h5")
+	unencoded_store_ids = get_unencoded_stores(rawstores,successfile,args.counts_folder)
+	remove_incomplete_encodings(unencoded_store_ids,glob.glob(args.output_folder + "*.txt"),args.output_folder)
+	print(unencoded_store_ids)
+	unencoded_store_files = [ args.counts_folder + 'bw_counts_' + store_id + '.h5' for store_id in unencoded_store_ids ]
+	print(unencoded_store_files)
+
 	manager = mp.Manager()
+	q = manager.Queue()
 	word_dict = manager.dict()
 	vol_dict = manager.dict()
 
@@ -147,16 +185,18 @@ def encodeCounts(args):
 				parallelEncodeH5File(args.core_count,os.path.join(args.counts_folder,file),word_dict,vol_dict,args.output_folder,args.file_size)
 	else:
 		print("Each .h5 file will be turned into an number of .txt files, each of which are around %sMB." % args.file_size)
-		with mp.Pool(int(args.core_count)) as pool:
+		with mp.Pool(int(args.core_count),maxtasksperchild=1) as pool:
+			watcher = pool.apply_async(listener, (q,successfile))
 			jobs = []
 
-			for file in os.listdir(args.counts_folder):
-				if file.endswith('.h5'):
-					job = pool.apply_async(encodeH5File,(os.path.join(args.counts_folder,file),word_dict,vol_dict,args.output_folder,args.file_size))
-					jobs.append(job)
+			for file in unencoded_store_files:
+				job = pool.apply_async(encodeH5File,(file,word_dict,vol_dict,args.output_folder,args.file_size,q))
+				jobs.append(job)
 
 			for job in jobs:
 				job.get()
+
+			q.put('kill')
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
