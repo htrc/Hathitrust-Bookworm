@@ -129,6 +129,10 @@ def encodeCounts(args):
 	if args.output_folder[-1:] != SLASH:
 		args.output_folder = args.output_folder + SLASH
 
+	manager = mp.Manager()
+	word_dict = manager.dict()
+	vol_dict = manager.dict()
+
 	with open(args.wordlist,'r') as wordlist_file:
 		word_dict = json.load(wordlist_file)
 
