@@ -111,7 +111,7 @@ def remove_incomplete_encodings(unencoded_store_ids,encoded_count_files,output_f
 			os.remove(f)
 
 def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
-	store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=1000000)
+	store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=100000)
 	store_name = counts[counts.rfind('/')+1:-3]
 	store_number = store_name[store_name.rfind("_")+1:]
 #	os.mkdir(output_folder + store_name)
@@ -168,8 +168,6 @@ def encodeCounts(args):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	word_dict = manager.dict()
-	vol_dict = manager.dict()
 
 	with open(args.wordlist,'r') as wordlist_file:
 		word_dict = json.load(wordlist_file)
