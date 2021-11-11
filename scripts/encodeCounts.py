@@ -150,6 +150,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 			if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
 				file_chunk_counter = file_chunk_counter + 1
 
+			gc.collect()
+
 		logging.info("Finished processing %s, sending store number to successfile" % counts)
 		q.put(store_number)
 	except Exception as e:
