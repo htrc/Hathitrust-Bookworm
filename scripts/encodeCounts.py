@@ -3,6 +3,7 @@ import pandas as pd
 import multiprocessing as mp
 import numpy as np
 from tqdm import tqdm
+import logging
 
 if os.name == 'nt':
 	SLASH = '\\'
@@ -97,6 +98,17 @@ def parallelEncodeH5File(core_count,counts,word_dict,vol_dict,output_folder,outp
 	pool.close()
 	pool.join()
 
+def init_log(data,name=False):
+	if not name:
+		name = os.getpid()
+	handler = logging.FileHandler(data + "logs/bw-%s.log" % name, 'a')
+	formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s', "%m/%d-%H:%M:%S")
+	handler.setFormatter(formatter)
+	logger = logging.getLogger()
+	logger.setLevel(logging.INFO)
+	logger.addHandler(handler)
+	logging.info("Log initialized")
+
 def get_unencoded_stores(rawstores,successfile,store_path):
 	try:
 		with open(successfile, "r") as f:
@@ -111,32 +123,38 @@ def remove_incomplete_encodings(unencoded_store_ids,encoded_count_files,output_f
 			os.remove(f)
 
 def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
-	store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=100000)
-	store_name = counts[counts.rfind('/')+1:-3]
-	store_number = store_name[store_name.rfind("_")+1:]
-#	os.mkdir(output_folder + store_name)
+	try:
+		store_iterator = pd.read_hdf(counts,key='/tf/docs',iterator=True,chunksize=100000)
+		store_name = counts[counts.rfind('/')+1:-3]
+		store_number = store_name[store_name.rfind("_")+1:]
+	#	os.mkdir(output_folder + store_name)
 
-	file_chunk_counter = 0
-	for chunk in store_iterator:
-		print("%s – Processing a chunk of %i volumes from %s" % (str(os.getpid()),len(chunk['count'].index.levels[0].values),store_name))
-		chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
+		file_chunk_counter = 0
+		print("%s: Processing %s" % (str(os.getpid()),store_name))
+		for chunk in store_iterator:
+			logging.info("%s – Processing a chunk of %i volumes from %s" % (str(os.getpid()),len(chunk['count'].index.levels[0].values),store_name))
+			chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
 
-		drop_list = []
-		encoded_index = []
-		for ind in chunk['count'].index.values:
-			try:
-				encoded_index.append((ind[0],word_dict[ind[1]]))
-			except:
-				drop_list.append(ind)
+			drop_list = []
+			encoded_index = []
+			for ind in chunk['count'].index.values:
+				try:
+					encoded_index.append((ind[0],word_dict[ind[1]]))
+				except:
+					drop_list.append(ind)
 
-		chunk.drop(drop_list,inplace=True)
-		encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
+			chunk.drop(drop_list,inplace=True)
+			encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
 
-		encoded_df.to_csv(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt',mode='a',header=False,sep='\t')
-		if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
-			file_chunk_counter = file_chunk_counter + 1
+			encoded_df.to_csv(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt',mode='a',header=False,sep='\t')
+			if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
+				file_chunk_counter = file_chunk_counter + 1
 
-	q.put(store_number)
+		logging.info("Finished processing %s, sending store number to successfile" % counts)
+		q.put(store_number)
+	except Exception as e:
+		logging.debug("Error while processing store %s" % counts)
+		logging.debug(e)
 
 	gc.collect()
 
@@ -148,8 +166,13 @@ def listener(q,successfile):
 			if results == 'kill':
 				break
 			else:
-				with open(successfile,'a') as f:
-					f.write(results + "\n")
+				try:
+					with open(successfile,'a') as f:
+						f.write(results + "\n")
+					logging.info("Recorded that store %s has been processed" % results)
+				except Exception as e:
+					logging.debug("Error while writing to successfile")
+					logging.debug(e)
 
 def encodeCounts(args):
 	if args.output_folder[-1:] != SLASH:
@@ -158,13 +181,15 @@ def encodeCounts(args):
 	if args.counts_folder[-1:] != SLASH:
 		args.counts_folder = args.counts_folder + SLASH
 
+	init_log('encode_words/','encoding')
+
 	successfile = "successful-encodings.txt"
 	rawstores = glob.glob(args.counts_folder + "*h5")
 	unencoded_store_ids = get_unencoded_stores(rawstores,successfile,args.counts_folder)
 	remove_incomplete_encodings(unencoded_store_ids,glob.glob(args.output_folder + "*.txt"),args.output_folder)
-	print(unencoded_store_ids)
+	logging.info(unencoded_store_ids)
 	unencoded_store_files = [ args.counts_folder + 'bw_counts_' + store_id + '.h5' for store_id in unencoded_store_ids ]
-	print(unencoded_store_files)
+	logging.info(unencoded_store_files)
 
 	manager = mp.Manager()
 	q = manager.Queue()
@@ -183,7 +208,7 @@ def encodeCounts(args):
 				parallelEncodeH5File(args.core_count,os.path.join(args.counts_folder,file),word_dict,vol_dict,args.output_folder,args.file_size)
 	else:
 		print("Each .h5 file will be turned into an number of .txt files, each of which are around %sMB." % args.file_size)
-		with mp.Pool(int(args.core_count),maxtasksperchild=1) as pool:
+		with mp.Pool(int(args.core_count),initializer=init_log,initargs=('encode_words/',),maxtasksperchild=1) as pool:
 			watcher = pool.apply_async(listener, (q,successfile))
 			jobs = []
 
