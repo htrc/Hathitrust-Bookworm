@@ -210,18 +210,21 @@ def encodeCounts(args):
 				parallelEncodeH5File(args.core_count,os.path.join(args.counts_folder,file),word_dict,vol_dict,args.output_folder,args.file_size)
 	else:
 		print("Each .h5 file will be turned into an number of .txt files, each of which are around %sMB." % args.file_size)
-		with mp.Pool(int(args.core_count),initializer=init_log,initargs=('encode_words/',),maxtasksperchild=1) as pool:
-			watcher = pool.apply_async(listener, (q,successfile))
-			jobs = []
+		pool = mp.Pool(int(args.core_count),initializer=init_log,initargs=('encode_words/',),maxtasksperchild=1)
 
-			for file in unencoded_store_files:
-				job = pool.apply_async(encodeH5File,(file,word_dict,vol_dict,args.output_folder,args.file_size,q))
-				jobs.append(job)
+		watcher = pool.apply_async(listener, (q,successfile))
+		jobs = []
 
-			for job in jobs:
-				job.get()
+		for file in unencoded_store_files:
+			job = pool.apply_async(encodeH5File,(file,word_dict,vol_dict,args.output_folder,args.file_size,q))
+			jobs.append(job)
 
-			q.put('kill')
+		for job in jobs:
+			job.get()
+
+		q.put('kill')
+		pool.close()
+		pool.join()
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
