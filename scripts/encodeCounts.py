@@ -227,6 +227,7 @@ def encodeCounts(args):
 		pool.join()
 
 if __name__ == "__main__":
+	mp.set_start_method("spawn")
 	parser = argparse.ArgumentParser()
 	parser.add_argument("wordlist", help="The wordlist.json file that encodes words")
 	parser.add_argument("volumelist", help="The volumelist.json file that encodes volumes")
