@@ -133,6 +133,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 		print("%s: Processing %s" % (str(os.getpid()),store_name))
 		for chunk in store_iterator:
 			logging.info("%s – Processing a chunk of %i volumes from %s" % (str(os.getpid()),len(chunk['count'].index.levels[0].values),store_name))
+			logging.debug("Processing the following volumes:")
+			logging.debug(chunk['count'].index.levels[0].values)
 			chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0,inplace=True)
 
 			drop_list = []
@@ -141,6 +143,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				try:
 					encoded_index.append((ind[0],word_dict[ind[1]]))
 				except:
+					logging.debug("Issue encoding the following tokens:")
+					logging.debug(ind)
 					drop_list.append(ind)
 
 			chunk.drop(drop_list,inplace=True)
