@@ -105,7 +105,7 @@ def init_log(data,name=False):
 	formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s', "%m/%d-%H:%M:%S")
 	handler.setFormatter(formatter)
 	logger = logging.getLogger()
-	logger.setLevel(logging.INFO)
+	logger.setLevel(logging.DEBUG)
 	logger.addHandler(handler)
 	logging.info("Log initialized")
 
@@ -142,9 +142,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 			for ind in chunk['count'].index.values:
 				try:
 					encoded_index.append((ind[0],word_dict[ind[1]]))
-				except:
-					logging.debug("Issue encoding the following tokens:")
-					logging.debug(ind)
+				except Exception as e:
+					logging.error(e)
 					drop_list.append(ind)
 
 			chunk.drop(drop_list,inplace=True)
@@ -160,7 +159,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 		q.put(store_number)
 	except Exception as e:
 		logging.debug("Error while processing store %s" % counts)
-		logging.debug(e)
+		logging.error(e)
 
 	gc.collect()
 
