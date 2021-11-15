@@ -143,15 +143,16 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				try:
 					encoded_index.append((ind[0],word_dict[ind[1]]))
 				except Exception as e:
-					logging.error(e)
 					drop_list.append(ind)
 
 			chunk.drop(drop_list,inplace=True)
-			encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
 
-			encoded_df.to_csv(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt',mode='a',header=False,sep='\t')
-			if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
-				file_chunk_counter = file_chunk_counter + 1
+			if len(encoded_index) > 0:
+				encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
+
+				encoded_df.to_csv(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt',mode='a',header=False,sep='\t')
+				if os.stat(output_folder + 'tmp-count-' + store_number + '-' + str(file_chunk_counter) + '.txt').st_size > int(output_file_size) * 1024 * 1024:
+					file_chunk_counter = file_chunk_counter + 1
 
 			gc.collect()
 
