@@ -83,9 +83,10 @@ def init_log(data,name=False):
 	formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s', "%m/%d-%H:%M:%S")
 	handler.setFormatter(formatter)
 	logger = logging.getLogger(str(os.getpid()))
-	logger.setLevel(logging.DEBUG)
+	logger.setLevel(logging.INFO)
 	logger.addHandler(handler)
-	logging.info("Log initialized")
+	logger.info("Log initialized")
+	return logger
 
 def buildWordOrderedIndex(args):
 	if args.source_directory[-1:] != SLASH:
@@ -94,7 +95,10 @@ def buildWordOrderedIndex(args):
 	if args.target_directory[-1:] != SLASH:
 		args.target_directory = args.target_directory + SLASH
 
-	init_log('ordered_index/','encoding')
+	if args.logging_directory[-1:] != SLASH:
+		args.logging_directory = args.logging_directory + SLASH
+
+	logger = init_log(args.logging_directory,'reorder')
 
 	manager = mp.Manager()
 	q = manager.Queue()
@@ -113,7 +117,7 @@ def buildWordOrderedIndex(args):
 #	for file in bookid_files:
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 #		for message_index in range(file_counter,file_counter+int(args.core_count)):
-		print("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
+		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
 		read_func = partial(readThroughFile,args.target_directory,file_mappings,worid_files,args.source_directory)
@@ -167,6 +171,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("source_directory", help="Folder we're reading the files from")
 	parser.add_argument("target_directory", help="Folder we're writing the output files to")
+	parser.add_argument("logging_directory", help="Folder where you want to write the logs to")
 	parser.add_argument("file_mapping", help="JSON file that maps wordid to file where some or all of the counts will be stored")
 	parser.add_argument("core_count", help="Number of cores you want to devote to the process")
 	args = parser.parse_args()
