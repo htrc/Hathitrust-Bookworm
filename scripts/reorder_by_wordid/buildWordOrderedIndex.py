@@ -102,11 +102,8 @@ def buildWordOrderedIndex(args):
 
 	manager = mp.Manager()
 	q = manager.Queue()
-	procs = manager.dict()
 	cores = int(args.core_count)
 	pool = mp.Pool(cores)
-
-	processing = []
 
 	write_func = partial(writeWordCountsToFile,args.target_directory)
 
@@ -114,53 +111,19 @@ def buildWordOrderedIndex(args):
 		file_mappings = json.load(mapping_file)
 
 	bookid_files = [f for f in os.listdir(args.source_directory)]
-#	for file in bookid_files:
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
-#		for message_index in range(file_counter,file_counter+int(args.core_count)):
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
 		read_func = partial(readThroughFile,args.target_directory,file_mappings,worid_files,args.source_directory)
 
 		result_list = []
-#		for result in tqdm(pool.imap_unordered(read_func,range(file_counter,file_counter+int(args.core_count)))):
 		for result in tqdm(pool.imap_unordered(read_func,bookid_files[file_counter:file_counter+int(args.core_count)])):	
 			result_list.append(result)
 
-#		print("Merging results")
 		processing_memory = mergeListDicts(result_list)
-#		with open(args.source_directory + file) as checkfile:
-#			file_reader = csv.reader(checkfile,delimiter='\t')
-#			for row in file_reader:
-#				write_files = file_mappings[row[1]]
-#				if len(write_files) > 1:
-#					write_file = None
-#					print(write_files)
-#					for candidate_file in range(0,len(write_files)):
-#						print(str(write_files[candidate_file]) + ".txt")
-#						if str(write_files[candidate_file]) + ".txt" not in worid_files:
-#							write_file = write_files[candidate_file]
-#							break
-#
-#						if os.path.getsize(args.target_directory + str(write_files[candidate_file]) + ".txt")/(1024*1024) < 100:
-#							write_file = write_files[candidate_file]
-#							break
-#
-#					if write_file is None:
-#						write_file = write_files[len(write_files)-1]
-#				else:
-#					write_file = write_files[0]
-#
-#				if write_file in processing_memory:
-#					if row[1] in processing_memory[write_file]:
-#						processing_memory[write_file][row[1]].append([row[0],row[2]])
-#					else:
-#						processing_memory[write_file] = { 'filename': str(write_file), row[1]: [[row[0],row[2]]] }
-#				else:
-#					processing_memory[write_file] = { 'filename': str(write_file), row[1]: [[row[0],row[2]]] }
 
 		gc.collect()
-#		print("Starting parallel writes on files")
 		pool.imap_unordered(write_func,processing_memory.values())
 
 	pool.close()
