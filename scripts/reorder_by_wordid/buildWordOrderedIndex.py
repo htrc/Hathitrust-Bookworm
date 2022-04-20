@@ -12,9 +12,12 @@ else:
 def writeWordCountsToFile(target_directory,word_counts):
 #	print(word_counts)
 	output_file = target_directory + word_counts['filename'] + ".txt"
+	if word_counts['filename'] == '113':
+		print("113: %o" % (word_counts,))
 	with open(output_file,'a') as open_output_file:
 		output_writer = csv.writer(open_output_file,delimiter='\t')
 		for entry in word_counts:
+			print("113 - %s: %i" % (entry,len(word_counts[entry])))
 			if entry != 'filename':
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
@@ -111,6 +114,7 @@ def buildWordOrderedIndex(args):
 		file_mappings = json.load(mapping_file)
 
 	bookid_files = [f for f in os.listdir(args.source_directory)]
+	bookid_files = bookid_files[:90]
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
