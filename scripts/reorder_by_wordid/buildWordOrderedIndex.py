@@ -115,7 +115,7 @@ def buildWordOrderedIndex(args):
 		file_mappings = json.load(mapping_file)
 
 	bookid_files = [f for f in os.listdir(args.source_directory)]
-	bookid_files = bookid_files[:90]
+	bookid_files = bookid_files[90:180]
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
