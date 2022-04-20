@@ -12,13 +12,13 @@ else:
 def writeWordCountsToFile(target_directory,word_counts):
 #	print(word_counts)
 	output_file = target_directory + word_counts['filename'] + ".txt"
-	if word_counts['filename'] == '113':
-		print("113: %o" % (word_counts,))
+	if word_counts['filename'] == '208':
+		print("208: %o" % (word_counts,))
 	with open(output_file,'a') as open_output_file:
 		output_writer = csv.writer(open_output_file,delimiter='\t')
 		for entry in word_counts:
-			if word_counts['filename'] == '113':
-				print("113 - %s: %i" % (entry,len(word_counts[entry])))
+			if word_counts['filename'] == '208':
+				print("208 - %s: %i" % (entry,len(word_counts[entry])))
 			if entry != 'filename':
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
