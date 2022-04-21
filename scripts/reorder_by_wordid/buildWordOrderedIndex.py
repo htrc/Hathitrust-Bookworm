@@ -11,6 +11,7 @@ else:
 
 def writeWordCountsToFile(target_directory,word_counts):
 #	print(word_counts)
+	print("Writing")
 	output_file = target_directory + word_counts['filename'] + ".txt"
 	if word_counts['filename'] == '208':
 		print(word_counts)
@@ -22,6 +23,7 @@ def writeWordCountsToFile(target_directory,word_counts):
 			if entry != 'filename':
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
+	print("Stopping writing")
 
 	gc.collect()
 
@@ -117,6 +119,7 @@ def buildWordOrderedIndex(args):
 	bookid_files = [f for f in os.listdir(args.source_directory)]
 	bookid_files = bookid_files[180:270]
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
+		print("Starting new batch")
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
