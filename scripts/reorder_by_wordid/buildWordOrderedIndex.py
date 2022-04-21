@@ -23,7 +23,7 @@ def writeWordCountsToFile(target_directory,word_counts):
 			if entry != 'filename':
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
-	print("Stopping writing")
+#	print("Stopping writing")
 
 	gc.collect()
 
