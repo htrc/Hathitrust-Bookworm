@@ -121,8 +121,11 @@ def buildWordOrderedIndex(args):
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		print("Starting new batch")
 		print(len(processing_memory))
-		if len(processing_memory) > 0:
-			sys.exit()
+		try:
+			if len(processing_memory) > 0:
+				sys.exit()
+		except:
+			print("First pass")
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
