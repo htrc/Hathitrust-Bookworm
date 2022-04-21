@@ -11,15 +11,15 @@ else:
 
 def writeWordCountsToFile(target_directory,word_counts):
 #	print(word_counts)
-	print("Writing - " + str(len(word_counts)))
+#	print("Writing - " + str(len(word_counts)))
 	output_file = target_directory + word_counts['filename'] + ".txt"
-	if word_counts['filename'] == '208':
-		print(word_counts)
+#	if word_counts['filename'] == '208':
+#		print(word_counts)
 	with open(output_file,'a') as open_output_file:
 		output_writer = csv.writer(open_output_file,delimiter='\t')
 		for entry in word_counts:
-			if word_counts['filename'] == '208':
-				print("208 - %s: %i" % (entry,len(word_counts[entry])))
+#			if word_counts['filename'] == '208':
+#				print("208 - %s: %i" % (entry,len(word_counts[entry])))
 			if entry != 'filename':
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
@@ -125,8 +125,6 @@ def buildWordOrderedIndex(args):
 		try:
 			print(len(processing_memory))
 			if len(processing_memory) > 0:
-				processing_memory = {}
-				time.sleep(6)
 				sys.exit()
 		except UnboundLocalError:
 			print("First pass")
