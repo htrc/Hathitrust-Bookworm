@@ -139,7 +139,9 @@ def buildWordOrderedIndex(args):
 		processing_memory = mergeListDicts(result_list)
 
 		gc.collect()
-		pool.imap_unordered(write_func,processing_memory.values())
+		write_result_list = []
+		for write_result in tqdm(pool.imap_unordered(write_func,processing_memory.values())):
+			write_result_list.append(write_result)
 
 	pool.close()
 	pool.join()
