@@ -1,4 +1,4 @@
-import sys, os, json, argparse, gc, glob, csv
+import sys, os, json, argparse, gc, glob, csv, time
 import multiprocessing as mp
 from functools import partial
 from tqdm import tqdm
@@ -11,7 +11,7 @@ else:
 
 def writeWordCountsToFile(target_directory,word_counts):
 #	print(word_counts)
-	print("Writing")
+	print("Writing - " + str(len(word_counts)))
 	output_file = target_directory + word_counts['filename'] + ".txt"
 	if word_counts['filename'] == '208':
 		print(word_counts)
@@ -120,13 +120,16 @@ def buildWordOrderedIndex(args):
 	bookid_files = bookid_files[180:270]
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		print("Starting new batch")
+		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
+
 		try:
 			print(len(processing_memory))
 			if len(processing_memory) > 0:
+				processing_memory = {}
+				time.sleep(6)
 				sys.exit()
 		except UnboundLocalError:
 			print("First pass")
-		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
 		read_func = partial(readThroughFile,args.target_directory,file_mappings,worid_files,args.source_directory)
