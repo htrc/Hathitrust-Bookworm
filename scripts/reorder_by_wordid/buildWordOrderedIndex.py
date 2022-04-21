@@ -120,11 +120,11 @@ def buildWordOrderedIndex(args):
 	bookid_files = bookid_files[180:270]
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		print("Starting new batch")
-		print(len(processing_memory))
 		try:
+			print(len(processing_memory))
 			if len(processing_memory) > 0:
 				sys.exit()
-		except:
+		except UnboundLocalError:
 			print("First pass")
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 		processing_memory = {}
