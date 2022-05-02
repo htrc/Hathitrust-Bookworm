@@ -3,6 +3,7 @@ import multiprocessing as mp
 from functools import partial
 from tqdm import tqdm
 import logging
+#from memory_profiler import profile
 
 if os.name == 'nt':
 	SLASH = '\\'
@@ -10,11 +11,14 @@ else:
 	SLASH = '/'
 
 def writeWordCountsToFile(target_directory,word_counts):
-	output_file = target_directory + word_counts['filename'] + ".txt"
+	output_file = target_directory + str(word_counts['filename']) + ".txt"
 	with open(output_file,'a') as open_output_file:
 		output_writer = csv.writer(open_output_file,delimiter='\t')
 		for entry in word_counts:
 			if entry != 'filename':
+#				if entry == '58':
+#					print(entry)
+#					print(len(word_counts[entry]))
 				for row in word_counts[entry]:
 					output_writer.writerow([entry,row[0],row[1]])
 
@@ -46,13 +50,26 @@ def readThroughFile(target_directory,file_mappings,worid_files,source_directory,
 				else:
 					write_file = write_files[0]
 
+				int_wordid = int(row[1])
 				if write_file in processing_memory:
-					if row[1] in processing_memory[write_file]:
-						processing_memory[write_file][row[1]].append([row[0],row[2]])
+					if int_wordid in processing_memory[write_file]:
+						processing_memory[write_file][int_wordid].append([int(row[0]),int(row[2])])
+#						if str(write_file) == '113':
+#							print("Case A: ")
+#							print(row)
+#							print(processing_memory[write_file])
 					else:
-						processing_memory[write_file] = { 'filename': str(write_file), row[1]: [[row[0],row[2]]] }
+						processing_memory[write_file][int_wordid] = [[int(row[0]),int(row[2])]]
+#						if str(write_file) == '113':
+#							print("Case B: ")
+#							print(row)
+#							print(processing_memory[write_file])
 				else:
-					processing_memory[write_file] = { 'filename': str(write_file), row[1]: [[row[0],row[2]]] }
+					processing_memory[write_file] = { 'filename': write_file, int_wordid: [[int(row[0]),int(row[2])]] }
+#					if str(write_file) == '113':
+#						print("Case C: ")
+#						print(row)
+#						print(processing_memory[write_file])
 		except:
 			print("Error processing file %s" % source_file)
 			raise
@@ -87,6 +104,7 @@ def init_log(data,name=False):
 	logger.info("Log initialized")
 	return logger
 
+#@profile
 def buildWordOrderedIndex(args):
 	if args.source_directory[-1:] != SLASH:
 		args.source_directory = args.source_directory + SLASH
@@ -99,35 +117,50 @@ def buildWordOrderedIndex(args):
 
 	logger = init_log(args.logging_directory,'reorder')
 
-	manager = mp.Manager()
-	q = manager.Queue()
-	cores = int(args.core_count)
-	pool = mp.Pool(cores)
-
-	write_func = partial(writeWordCountsToFile,args.target_directory)
-
 	with open(args.file_mapping,'r') as mapping_file:
 		file_mappings = json.load(mapping_file)
 
+	manager = mp.Manager()
+	q = manager.Queue()
+	cores = int(args.core_count)
+	pool = mp.Pool(cores,maxtasksperchild=int((32168/int(args.core_count))+1))
+
+	write_func = partial(writeWordCountsToFile,args.target_directory)
+
 	bookid_files = [f for f in os.listdir(args.source_directory)]
+	processing_memory = {}
+	write_result_list = []
+	result_list = []
+
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 
-		processing_memory = {}
 		worid_files = [f for f in os.listdir(args.target_directory)]
 		read_func = partial(readThroughFile,args.target_directory,file_mappings,worid_files,args.source_directory)
 
-		result_list = []
 		for result in tqdm(pool.imap_unordered(read_func,bookid_files[file_counter:file_counter+int(args.core_count)])):	
 			result_list.append(result)
 
+#		for res in result_list:
+#			for file in res:
+#				if res[file]['filename'] == 113:
+#					print(res[file])
+#					if 58 in res[file]:
+#						print(len(res[file][58]))
+		
 		processing_memory = mergeListDicts(result_list)
+#		with open('sample_memory_object.json','w') as test_file:
+#			json.dump(processing_memory,test_file)
+#		sys.exit()
 
+		result_list = []
 		gc.collect()
-		write_result_list = []
+
 		for write_result in tqdm(pool.imap_unordered(write_func,processing_memory.values())):
 			write_result_list.append(write_result)
 
+		processing_memory = {}
+		write_result_list = []
 		gc.collect()
 
 	pool.close()
