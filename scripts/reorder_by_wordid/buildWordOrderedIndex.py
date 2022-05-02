@@ -24,7 +24,7 @@ def writeWordCountsToFile(target_directory,word_counts):
 
 	gc.collect()
 
-def readThroughFile(target_directory,file_mappings,worid_files,source_directory,source_file):
+def readThroughFile(target_directory,file_mappings,source_directory,source_file):
 	processing_memory = {}
 #	print("Reading file %s" % source_directory + source_file)
 	with open(source_directory + source_file) as checkfile:
@@ -37,7 +37,8 @@ def readThroughFile(target_directory,file_mappings,worid_files,source_directory,
 	#					print(write_files)
 					for candidate_file in range(0,len(write_files)):
 	#						print(str(write_files[candidate_file]) + ".txt")
-						if str(write_files[candidate_file]) + ".txt" not in worid_files:
+#						if str(write_files[candidate_file]) + ".txt" not in worid_files:
+						if not os.path.isfile(target_directory + str(write_files[candidate_file]) + ".txt"):
 							write_file = write_files[candidate_file]
 							break
 
@@ -135,8 +136,8 @@ def buildWordOrderedIndex(args):
 	for file_counter in range(0,len(bookid_files),int(args.core_count)):
 		logger.info("Beginning to process %s" % ", ".join(bookid_files[file_counter:file_counter+int(args.core_count)]))
 
-		worid_files = [f for f in os.listdir(args.target_directory)]
-		read_func = partial(readThroughFile,args.target_directory,file_mappings,worid_files,args.source_directory)
+#		worid_files = [f for f in os.listdir(args.target_directory)]
+		read_func = partial(readThroughFile,args.target_directory,file_mappings,args.source_directory)
 
 		for result in tqdm(pool.imap_unordered(read_func,bookid_files[file_counter:file_counter+int(args.core_count)])):	
 			result_list.append(result)
