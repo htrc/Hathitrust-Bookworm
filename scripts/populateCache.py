@@ -6,7 +6,9 @@ def populateCache():
 	print(json_string)
 	encoded_params = urllib.parse.quote_plus(json_string)
 	print(encoded_params)
-	results = requests.get('http://localhost:10013?query=' + encoded_params,headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+	url = 'http://localhost:10013?query=' + encoded_params
+	print(url)
+	results = requests.get(url,headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
 	print(results)
 	print(results.content)
 
