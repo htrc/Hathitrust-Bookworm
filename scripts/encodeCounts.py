@@ -145,6 +145,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				except Exception as e:
 					drop_list.append(ind)
 
+			logging.debug(chunk['count'])
 			logging.debug(drop_list)
 			chunk.drop(drop_list,inplace=True)
 			logging.debug("Finished dropping")
