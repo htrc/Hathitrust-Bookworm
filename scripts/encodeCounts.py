@@ -39,9 +39,7 @@ def listener(q):
 
 def processChunk(chunk,word_dict,vol_dict,output_folder,store_name,output_file_size):
 	print("%s processing a chunk of %i volumes" % (str(os.getpid()),len(chunk['count'].index.levels[0].values)))
-	logging.debug(chunk['count'].index)
 	chunk['count'].index = chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0)
-	logging.debug(chunk['count'].index)
 
 	drop_list = []
 	encoded_index = []
@@ -137,9 +135,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 			logging.info("%s – Processing a chunk of %i volumes from %s" % (str(os.getpid()),len(chunk['count'].index.levels[0].values),store_name))
 			logging.debug("Processing the following volumes:")
 			logging.debug(chunk['count'].index.levels[0].values)
-			logging.debug(chunk['count'].index)
 			chunk['count'].index = chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0)
-			logging.debug(chunk['count'].index)
 
 			drop_list = []
 			encoded_index = []
@@ -149,7 +145,9 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				except Exception as e:
 					drop_list.append(ind)
 
+			logging.debug(drop_list)
 			chunk.drop(drop_list,inplace=True)
+			logging.debug("Finished dropping")
 
 			if len(encoded_index) > 0:
 				encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
