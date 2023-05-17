@@ -146,16 +146,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				except Exception as e:
 					drop_list.append(ind)
 
-			logging.debug(chunk)
-			logging.debug(chunk['count'])
-			logging.debug(chunk.index)
-			logging.debug(chunk['count'].index)
-			logging.debug(type(chunk))
-			logging.debug(type(chunk['count']))
 			chunk.drop(drop_list,inplace=True)
-			logging.debug("Finished dropping")
-			logging.debug(len(chunk['count'].values))
-			logging.debug(len(encoded_index))
 
 			if len(encoded_index) > 0:
 				encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
