@@ -49,7 +49,7 @@ def processChunk(chunk,word_dict,vol_dict,output_folder,store_name,output_file_s
 		except:
 			drop_list.append(ind)
 
-	chunk.drop(drop_list,inplace=True)
+	chunk.drop(drop_list,inplace=True,errors='ignore')
 	encoded_df = pd.DataFrame(data=chunk['count'].values,index=pd.MultiIndex.from_tuples(encoded_index))
 
 	output_base = 'tmp-count-' + str(os.getpid())
@@ -145,10 +145,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 				except Exception as e:
 					drop_list.append(ind)
 
-			logging.debug(drop_list[0])
-			with pd.option_context('display.max_rows',None,'display.max_columns',None):
-				logging.debug(chunk['count']['6952'])
-			chunk.drop(drop_list,inplace=True)
+			chunk.drop(drop_list,inplace=True,errors='ignore')
 			logging.debug("Finished dropping")
 
 			if len(encoded_index) > 0:
