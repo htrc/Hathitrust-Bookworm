@@ -146,8 +146,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 					drop_list.append(ind)
 
 			logging.debug(drop_list[0])
-			logging.debug(chunk['count']['6952'])
-			logging.debug(type(chunk['count']['6952']))
+			with pd.option_context('display.max_rows',None,'display.max_columns',None):
+				logging.debug(chunk['count']['6952'])
 			chunk.drop(drop_list,inplace=True)
 			logging.debug("Finished dropping")
 
