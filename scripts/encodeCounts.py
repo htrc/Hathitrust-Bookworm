@@ -146,7 +146,8 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 					drop_list.append(ind)
 
 			logging.debug(drop_list)
-			logging.debug(chunk['count']['6952'])
+			for tok in chunk['count']['6952']:
+				logging.debug(chunk['count']['6952'][tok])
 			chunk.drop(drop_list,inplace=True)
 			logging.debug("Finished dropping")
 
