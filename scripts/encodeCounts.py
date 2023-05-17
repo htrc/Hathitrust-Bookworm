@@ -148,7 +148,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 			logging.debug(chunk)
 			logging.debug(chunk['count'])
 			logging.debug(type(chunk))
-			logging.debug(chunk['count'])
+			logging.debug(type(chunk['count']))
 			chunk['count'].drop(drop_list,inplace=True)
 			logging.debug("Finished dropping")
 			logging.debug(len(chunk['count'].values))
