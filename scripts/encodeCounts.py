@@ -136,6 +136,7 @@ def encodeH5File(counts,word_dict,vol_dict,output_folder,output_file_size,q):
 			logging.debug("Processing the following volumes:")
 			logging.debug(chunk['count'].index.levels[0].values)
 			chunk['count'].index = chunk['count'].index.set_levels(applyEncoding(chunk['count'].index.levels[0].values,vol_dict),level=0)
+			chunk.index = chunk['count'].index
 
 			drop_list = []
 			encoded_index = []
