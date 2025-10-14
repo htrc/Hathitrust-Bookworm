@@ -178,7 +178,7 @@ def trim_token(t, max=50):
 			t = t[:-1]
 	return t
 
-def get_processed(features):
+def get_processed(features,successfile):
 	''' Get already processed files. Wrapped in func for easy refresh'''
 	try:
 		with open(successfile, "r") as f:
@@ -256,6 +256,9 @@ def store_check_listener(q,successfile):
 				all_ids.append(results)
 				logging.info("Batch %d done" % i)
 
+def chunkFilenames(unprocessed_filenames,chunk_size):
+	for i in range(0, len(unprocessed_filenames), chunk_size):
+		yield unprocessed_filenames[i:i + chunk_size]
 
 def generateStores(features,data,core_count):
 	init_log(data,"root")
@@ -270,12 +273,9 @@ def generateStores(features,data,core_count):
 	import time
 	# Split paths into N-sized chunks, so engines can iterate on multiple texts at once
 	chunk_size = 25
-	remaining_paths = np.setdiff1d(paths, get_processed(features))
+	remaining_paths = np.setdiff1d(paths, get_processed(features,successfile))
 	print("%d paths remaining" % len(remaining_paths))
-#	n = 10000000
-	n = 17123746
-	start = 0
-	chunked_paths = [remaining_paths[start+i:start+i+chunk_size] for i in range(0, len(remaining_paths[start:start+n]), chunk_size)]
+	chunked_paths = list(chunkFilenames(remaining_paths,chunk_size))
 
 	print(os.getpid())
 	manager = mp.Manager()
