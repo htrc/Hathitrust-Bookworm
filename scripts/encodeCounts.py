@@ -239,7 +239,7 @@ if __name__ == "__main__":
 	parser.add_argument("counts_folder", help="The folder that holds the .h5 files to count")
 	parser.add_argument("output_folder", help="Foler to write the output to. Must exists")
 	parser.add_argument("core_count", help="Number of cores you want to devote to the process")
-	parser.add_argument("file_size", help="Approximage max size of output files in MB")
+	parser.add_argument("file_size", help="Approximate max size of output files in MB")
 	parser.add_argument("--single_file_processing", action="store_true", help="If this flag is turned on each .h5 file will be processed by a separate process. Since that will open many files at once, this may cause memory issues.")
 	args = parser.parse_args()
 	
